@@ -104,6 +104,58 @@ A switch labelled **Generative UI** in the header, with an explicit ON/OFF state
 
 ---
 
+## Month-by-month spending breakdown
+
+Lives on the **ablation-OFF dashboard**, opened from a spending tile. Renders as a
+full-screen overlay rather than its own route — deliberately, because every protected
+path is listed explicitly in `middleware.ts`, so a new route would ship
+unauthenticated until that matcher was updated. An overlay inherits the gate of the
+page it opens from.
+
+What it shows:
+
+- **Every month from the first record to the last**, including the empty ones. A gap is
+  information; skipping it would misrepresent the trend.
+- A total and a count per month, with the year figure leading.
+- **Expand any month to see the individual emails behind the figure**, largest first.
+  Click one and the reading pane opens beside the breakdown rather than replacing it.
+
+**Why it matters for the demo:** it is the audit trail for every number on screen.
+A judge asking "where does $182,984.91 come from?" can expand a month and read the
+actual emails that sum to it. Money attributed to the day it moves (`chargeDate`),
+falling back to when it arrived (`receivedAt`).
+
+It is also a pointed contrast: the *frozen* dashboard is where the exhaustive drill-down
+lives, while the generative side answers the question directly. The ablation is not a
+strawman — the fixed side genuinely does something the generative side does not.
+
+---
+
+## Mail rows and pagination
+
+- **`MailRow`** renders inbox-style rows (sender, subject, amount, date) so a table of
+  emails reads like mail rather than a spreadsheet. Used by `TableBlock` and the
+  ablation dashboard.
+- **`Pagination`** pages every list at 15 per page (12 for `entity`, 16 for
+  `smallMultiples`), with `1–15 of 36` counts and Prev/Next.
+
+One design decision worth stating: **the model is never told about `limit`.** Pagination
+is display state owned by the components. When `limit` was offered in the block catalog
+the model emitted values, and a single invalid one failed validation and took the whole
+spec down — leaving the entire dashboard ungenerated. The counts are always visible, so
+a page is never silently hiding rows.
+
+---
+
+## Motion and ground
+
+`AuroraBackground` animates the page ground with `requestAnimationFrame` and a settle
+condition, so it comes to rest instead of burning CPU for the length of a demo. The dark
+palette is defined as CSS variables in `globals.css` and consumed through
+`components/theme.ts`; no block hardcodes a colour.
+
+---
+
 ## Reliability and trust
 
 Each of these exists because it failed at least once during the build. The one-liner is why a judge should care.
@@ -122,7 +174,7 @@ Each of these exists because it failed at least once during the build. The one-l
 | **The never-500 guarantee** — `/api/view` always returns a valid spec: cache → model → fallback | The demo cannot crash on a bad model response, because a bad model response is a handled case rather than an exception. Verified with no credentials present at all. |
 | **The fallback notice** — an on-screen banner distinguishing `failureKind: "provider"` from `"invalid"` | The never-500 guarantee turns every failure into a valid 200, which makes a fallback indistinguishable from a real answer — it hid two separate bugs during the build. The notice says "the model was not reached" versus "the model's answer was rejected", because conflating them sends you debugging the wrong layer. |
 | **Spec caching** — `sha256(intent\|provider\|schemaVersion)`; fallbacks deliberately not cached | A warm cache means a rehearsal costs zero tokens and a cache hit returns in 0ms. Fallbacks stay uncached so they get retried rather than remembered. |
-| **`ShowAll` footers** — "Showing N of M · Show all" on every truncating block | Hidden rows that are both invisible and unmentioned read as data loss, and there is no pagination to fall back on. Server-side the pipeline also drops the model's `limit` entirely, because the model routinely capped a block at 10 rows and silently hid most of an 85-row corpus. |
+| **`Pagination` footers** — "Showing N of M · Show all" on every truncating block | Hidden rows that are both invisible and unmentioned read as data loss, and there is no pagination to fall back on. Server-side the pipeline also drops the model's `limit` entirely, because the model routinely capped a block at 10 rows and silently hid most of an 85-row corpus. |
 
 ---
 

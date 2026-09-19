@@ -106,6 +106,29 @@ Refinements are cached on `sha256("refine" + baseSpec + instruction + provider +
 
 ---
 
+## UI components worth knowing
+
+| Component | Role |
+|---|---|
+| `IntentBar` | the only input. Text plus four demo chips from `lib/intents.ts`, shared with `warm-cache.ts` so a chip can never drift out of the warm cache |
+| `RefineBar` | "+ Adjust this view" — expands to one line for an incremental instruction, with Undo |
+| `Renderer` | the `switch` over `block.type`. Security boundary: unknown type renders nothing |
+| `ItemDrawer` | the reading pane. Message tab (full email, mail-client layout) and Extracted-fields tab (the source sentence beside the fields the model pulled from it) |
+| `SpendingBreakdown` | month-by-month spending on the ablation dashboard, every month including empty ones, expandable to the emails behind each figure |
+| `MailRow` | inbox-style row (sender, subject, amount, date) used by `TableBlock` and the ablation dashboard |
+| `Pagination` | pages every list at 15 (12 entity, 16 smallMultiples) with `1–15 of 36` counts. Display state only — the model is never told about `limit` |
+| `FixedDashboard` | the ablation-OFF view. Deliberately plain; do not improve it |
+| `SpecInspector` | shows the raw ViewSpec the model returned |
+| `FallbackNotice` | distinguishes a provider failure from a rejected spec, with the matching fix command |
+| `AuroraBackground` | animated ground, `requestAnimationFrame` with a settle condition so it stops |
+| `ItemSelection` | React context letting any block open the reading pane without threading a callback through every block signature |
+
+Blocks are pure presentational: `{ block, items }` in, JSX out. No fetching, no Prisma,
+no LLM imports. Formatting, filtering and grouping live in `components/blockData.ts`;
+colours come from `components/theme.ts` and CSS variables, never hardcoded.
+
+---
+
 ## Reliability
 
 `/api/view` **always returns a valid spec** — cache → model → fallback. It never 500s, verified with no credentials present.
