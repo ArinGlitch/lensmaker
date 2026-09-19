@@ -153,8 +153,18 @@ export const CalendarBlockSchema = z.object({
   type: z.literal("calendar"),
   dateField: z.string().min(1).max(40),
   primary: z.string().min(1).max(40),
+  secondary: z.string().max(40).optional(),
   /** "month" shows a 7-column grid; "week" shows a single row of 7 days. */
   scale: z.enum(["month", "week"]).optional(),
+  /**
+   * Which range to open on: "now" (default) anchors on today, "data" anchors on
+   * the earliest matching date, or an ISO date pins a specific month/week.
+   *
+   * Inferring from data alone opened on March 2026 with 2 of 36 items visible,
+   * because the corpus spans Feb-Sep. Defaulting to "now" shows the range a
+   * user actually means when they say "this month".
+   */
+  anchor: z.string().max(40).optional(),
 });
 
 /** Age-of-inaction histogram: how long things have been sitting. */
@@ -184,6 +194,9 @@ export const ComparisonBlockSchema = z.object({
   leftFilters: z.array(FilterSchema).max(6),
   rightLabel: z.string().min(1).max(40),
   rightFilters: z.array(FilterSchema).max(6),
+  /** Optional drill-down: which rows make up each side. */
+  primary: z.string().max(40).optional(),
+  secondary: z.string().max(40).optional(),
 });
 
 /** Live-ticking time remaining until the soonest matching date. */
@@ -216,7 +229,10 @@ export const EntityBlockSchema = z.object({
   field: z.string().max(40).optional(),
   agg: AggSchema.optional(),
   format: FormatSchema.optional(),
-  limit: z.number().int().min(1).max(12).optional(),
+  /** Time axis for the sparkline and "last activity". Defaults to receivedAt. */
+  dateField: z.string().max(40).optional(),
+  /** Up to 100: the corpus has 73 distinct vendors, so 12 was too tight. */
+  limit: z.number().int().min(1).max(100).optional(),
 });
 
 /** Grid of identical mini-cards, one per group, so outliers pop. */
@@ -227,7 +243,7 @@ export const SmallMultiplesBlockSchema = z.object({
   field: z.string().max(40).optional(),
   agg: AggSchema.optional(),
   format: FormatSchema.optional(),
-  limit: z.number().int().min(1).max(12).optional(),
+  limit: z.number().int().min(1).max(100).optional(),
 });
 
 export const BlockSchema = z.discriminatedUnion("type", [

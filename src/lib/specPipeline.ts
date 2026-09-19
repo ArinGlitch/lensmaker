@@ -46,7 +46,9 @@ function referencedFields(block: Block): string[] {
         (x): x is string => typeof x === "string",
       );
     case "calendar":
-      return [block.dateField, block.primary];
+      return [block.dateField, block.primary, block.secondary].filter(
+        (x): x is string => typeof x === "string",
+      );
     case "buckets":
       return [block.dateField, block.primary, block.secondary].filter(
         (x): x is string => typeof x === "string",
@@ -54,9 +56,11 @@ function referencedFields(block: Block): string[] {
     case "comparison":
       return [
         block.field,
+        block.primary,
+        block.secondary,
         ...block.leftFilters.map((f) => f.field),
         ...block.rightFilters.map((f) => f.field),
-      ];
+      ].filter((x): x is string => typeof x === "string");
     case "countdown":
       return [block.dateField, block.primary].filter(
         (x): x is string => typeof x === "string",
@@ -65,9 +69,12 @@ function referencedFields(block: Block): string[] {
       return [block.groupBy, block.dateField, block.primary].filter(
         (x): x is string => typeof x === "string",
       );
-    case "entity":
     case "smallMultiples":
       return [block.groupBy, block.field].filter(
+        (x): x is string => typeof x === "string",
+      );
+    case "entity":
+      return [block.groupBy, block.field, block.dateField].filter(
         (x): x is string => typeof x === "string",
       );
   }

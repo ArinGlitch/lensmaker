@@ -118,7 +118,7 @@ export const CATALOG: CatalogEntry[] = [
   {
     type: "calendar",
     use: "Month or week GRID. Use when the user thinks in dates rather than a ranked order.",
-    props: "dateField, primary, scale?(month|week)",
+    props: "dateField, primary, secondary?, scale?(month|week), anchor?(\"now\" default | \"data\" | an ISO date)",
   },
   {
     type: "buckets",
