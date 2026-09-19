@@ -6,7 +6,17 @@ import {
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 import { buildPrompt } from "./prompt";
 import { VIEWSPEC_JSON_SCHEMA } from "./schema";
-import type { GenerateInput, GenerateResult, LLMProvider } from "./types";
+import {
+  EXTRACTION_JSON_SCHEMA,
+  buildExtractionPrompt,
+  type ExtractInput,
+} from "./extract";
+import type {
+  ExtractResult,
+  GenerateInput,
+  GenerateResult,
+  LLMProvider,
+} from "./types";
 
 const MODEL =
   process.env.BEDROCK_MODEL_ID ??
@@ -57,5 +67,37 @@ export class HaikuProvider implements LLMProvider {
     const block = res.output?.message?.content?.find((c) => c.toolUse);
     const spec = block?.toolUse?.input ?? null;
     return { spec, raw: JSON.stringify(spec), latencyMs };
+  }
+
+  async extractFields(input: ExtractInput): Promise<ExtractResult> {
+    const tool: Tool = {
+      toolSpec: {
+        name: "emit_fields",
+        description: "Emit the structured fields extracted from the email.",
+        inputSchema: {
+          json: EXTRACTION_JSON_SCHEMA as unknown as Record<string, never>,
+        },
+      },
+    };
+
+    const started = Date.now();
+    const res = await this.client.send(
+      new ConverseCommand({
+        modelId: MODEL,
+        messages: [
+          { role: "user", content: [{ text: buildExtractionPrompt(input) }] },
+        ],
+        inferenceConfig: { temperature: 0, maxTokens: 1024 },
+        toolConfig: {
+          tools: [tool],
+          toolChoice: { tool: { name: "emit_fields" } },
+        },
+      }),
+    );
+    const latencyMs = Date.now() - started;
+
+    const block = res.output?.message?.content?.find((c) => c.toolUse);
+    const fields = block?.toolUse?.input ?? null;
+    return { fields, raw: JSON.stringify(fields), latencyMs };
   }
 }

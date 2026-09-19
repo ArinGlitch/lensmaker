@@ -1,7 +1,17 @@
 import { GoogleGenAI } from "@google/genai";
 import { buildPrompt } from "./prompt";
 import { VIEWSPEC_JSON_SCHEMA } from "./schema";
-import type { GenerateInput, GenerateResult, LLMProvider } from "./types";
+import {
+  EXTRACTION_JSON_SCHEMA,
+  buildExtractionPrompt,
+  type ExtractInput,
+} from "./extract";
+import type {
+  ExtractResult,
+  GenerateInput,
+  GenerateResult,
+  LLMProvider,
+} from "./types";
 
 const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.8-flash";
 
@@ -40,5 +50,29 @@ export class GeminiProvider implements LLMProvider {
       spec = null;
     }
     return { spec, raw, latencyMs };
+  }
+
+  async extractFields(input: ExtractInput): Promise<ExtractResult> {
+    const started = Date.now();
+    const res = await this.ai.models.generateContent({
+      model: MODEL,
+      contents: buildExtractionPrompt(input),
+      config: {
+        temperature: 0,
+        responseMimeType: "application/json",
+        responseSchema: EXTRACTION_JSON_SCHEMA as unknown as object,
+        maxOutputTokens: 1024,
+      },
+    });
+    const latencyMs = Date.now() - started;
+
+    const raw = res.text ?? "";
+    let fields: unknown = null;
+    try {
+      fields = JSON.parse(raw);
+    } catch {
+      fields = null;
+    }
+    return { fields, raw, latencyMs };
   }
 }
