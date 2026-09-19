@@ -6,7 +6,7 @@ import type { SmallMultiplesBlock, Item } from "@/lib/viewspec";
 import { aggregate } from "@/lib/aggregate";
 import { applyFilters, fieldLabel, formatValue } from "@/components/blockData";
 import { BLOCK_TITLE, MICRO } from "@/components/theme";
-import ShowAll from "@/components/ShowAll";
+import Pagination, { clampPage, pageSlice } from "@/components/Pagination";
 
 /**
  * A dense grid of identical mini-tiles, one per group, all drawn against ONE
@@ -48,7 +48,8 @@ export default function SmallMultiplesBlockView({
   block: SmallMultiplesBlock;
   items: Item[];
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [page, setPage] = useState(1);
+  const perPage = block.limit ?? 16;
 
   const rows = applyFilters(items, block.filters);
 
@@ -84,10 +85,8 @@ export default function SmallMultiplesBlockView({
   });
 
   const total = tiles.length;
-  const shown =
-    !expanded && typeof block.limit === "number" && block.limit > 0
-      ? tiles.slice(0, block.limit)
-      : tiles;
+  const current = clampPage(page, total, perPage);
+  const shown = pageSlice(tiles, current, perPage);
 
   /**
    * ONE max across every tile shown, computed once — this is the shared ruler.
@@ -187,11 +186,12 @@ export default function SmallMultiplesBlockView({
         </ul>
       )}
 
-      <ShowAll
-        shown={shown.length}
+      <Pagination
+        page={current}
         total={total}
-        expanded={expanded}
-        onToggle={() => setExpanded((v) => !v)}
+        perPage={perPage}
+        onPage={setPage}
+        variant="inline"
         noun="tiles"
       />
     </section>

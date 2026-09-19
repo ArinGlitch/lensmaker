@@ -12,7 +12,7 @@ import {
 } from "@/components/blockData";
 import { BLOCK_TITLE, MICRO } from "@/components/theme";
 import { useSelectItem } from "@/components/ItemSelection";
-import ShowAll from "@/components/ShowAll";
+import Pagination, { clampPage, pageSlice } from "@/components/Pagination";
 
 /**
  * One wide summary card per entity (usually a vendor), stacked vertically, each
@@ -209,7 +209,8 @@ export default function EntityBlockView({
   items: Item[];
 }) {
   const selectItem = useSelectItem();
-  const [expanded, setExpanded] = useState(false);
+  const [page, setPage] = useState(1);
+  const perPage = block.limit ?? 12;
 
   const rows = applyFilters(items, block.filters);
 
@@ -247,10 +248,8 @@ export default function EntityBlockView({
   });
 
   const total = groups.length;
-  const shown =
-    !expanded && typeof block.limit === "number" && block.limit > 0
-      ? groups.slice(0, block.limit)
-      : groups;
+  const current = clampPage(page, total, perPage);
+  const shown = pageSlice(groups, current, perPage);
 
   const valueLabel =
     block.agg && block.field
@@ -329,11 +328,12 @@ export default function EntityBlockView({
         </ul>
       )}
 
-      <ShowAll
-        shown={shown.length}
+      <Pagination
+        page={current}
         total={total}
-        expanded={expanded}
-        onToggle={() => setExpanded((v) => !v)}
+        perPage={perPage}
+        onPage={setPage}
+        variant="inline"
         noun="groups"
       />
     </section>
