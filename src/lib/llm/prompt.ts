@@ -27,6 +27,11 @@ RULES
 - NEVER emit the same block type twice. Each block must be a DIFFERENT type.
 - Prefer a mix of shapes: one number, one chart, one item view. Visual variety matters.
 - To express "this field is set", use {field, op:"ne", value:null}.
+- TIME RULE: the value "now" is a valid filter value meaning this moment.
+  For intents about what is UPCOMING / due / due soon / coming up, filter
+  {field:"deadlineDate", op:"gte", value:"now"} (or chargeDate) and sort dir:"asc".
+  Most data is HISTORICAL — without this you will show items months overdue.
+  For intents about what is OVERDUE / missed / late, use op:"lt" with "now" instead.
 - Lead with a "stat" only when a single headline number is the point.
 - Use "timeline" for date/deadline intents, "bar" for comparisons, "cards" when individual items matter.
 - Use "callout" for risk/warning intents.

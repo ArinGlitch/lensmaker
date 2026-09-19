@@ -14,6 +14,23 @@ const FIELD_TYPE = new Map(SCHEMA_DIGEST.map((f) => [f.name, f.type]));
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}(T|$)/;
 
+/**
+ * Mirrors RELATIVE_DATES in lib/filters.ts. The model can use "now"/"today" as
+ * a filter value to mean "from this moment", which is how an intent about
+ * UPCOMING deadlines excludes the 27 already-past ones.
+ */
+function relativeDate(value: unknown): Date | null {
+  if (typeof value !== "string") return null;
+  const t = value.trim().toLowerCase();
+  if (t === "now") return new Date();
+  if (t === "today") {
+    const d = new Date();
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
+  }
+  return null;
+}
+
 function asRecord(item: Item): Record<string, unknown> {
   return item as unknown as Record<string, unknown>;
 }
@@ -106,7 +123,9 @@ function matches(value: unknown, filter: Filter): boolean {
     case "gt":
     case "gte": {
       const a = numeric(value);
-      const b = numeric(filter.value);
+      // "now"/"today" resolve to a timestamp so date comparisons work.
+      const rel = relativeDate(filter.value);
+      const b = rel ? rel.getTime() : numeric(filter.value);
       if (a === null || b === null) return false;
       if (filter.op === "lt") return a < b;
       if (filter.op === "lte") return a <= b;

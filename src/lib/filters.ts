@@ -9,7 +9,31 @@ export class DisallowedFieldError extends Error {
   }
 }
 
+/**
+ * Relative date tokens the model may use as a filter value.
+ *
+ * Without these the model had no way to say "from today onward": it filtered
+ * only `deadlineDate ne null`, and with 27 of 36 deadlines already past, an
+ * ascending timeline showed items 176 days overdue instead of what is coming up.
+ */
+const RELATIVE_DATES: Record<string, () => Date> = {
+  now: () => new Date(),
+  today: () => {
+    const d = new Date();
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
+  },
+};
+
+export function resolveRelativeDate(value: unknown): Date | null {
+  if (typeof value !== "string") return null;
+  const f = RELATIVE_DATES[value.trim().toLowerCase()];
+  return f ? f() : null;
+}
+
 function coerce(field: string, value: unknown): unknown {
+  const rel = resolveRelativeDate(value);
+  if (rel) return rel;
   if (value === null) return null;
   const t = TYPE_OF.get(field);
   if (t === "date" && typeof value === "string") {
