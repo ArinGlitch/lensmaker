@@ -70,6 +70,9 @@ function numeric(value: unknown): number | null {
 }
 
 function looseEqual(value: unknown, target: unknown): boolean {
+  // `null` is a meaningful filter value: {op:"ne", value:null} is how the model
+  // says "this field is set", which it reaches for on deadlineDate constantly.
+  if (target === null) return value == null;
   if (value == null) return false;
   if (typeof value === "boolean") {
     if (typeof target === "boolean") return value === target;
