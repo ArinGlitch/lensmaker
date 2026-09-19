@@ -101,7 +101,12 @@ export default function SpendingBreakdown({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      // If a message is open it owns Escape: the first press should close the
+      // email and leave the breakdown where it was. Only once nothing is being
+      // read does Escape dismiss the breakdown itself.
+      if (document.documentElement.dataset.reading === "true") return;
+      onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -135,7 +140,13 @@ export default function SpendingBreakdown({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => {
+              // Close is the way out of the whole view: it takes any open
+              // message with it, rather than leaving a pane with nothing
+              // behind it.
+              selectItem(null);
+              onClose();
+            }}
             className="rounded-md border border-[var(--line-strong)] px-3 py-1.5 text-xs text-[var(--ink-2)] transition-colors hover:bg-white/5"
           >
             Close
