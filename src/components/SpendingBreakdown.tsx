@@ -120,7 +120,7 @@ export default function SpendingBreakdown({
   if (!open || !mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] overflow-y-auto bg-[var(--ground)]/95 backdrop-blur-sm">
+    <div className="reading-inset fixed inset-0 z-[45] overflow-y-auto bg-[var(--ground)]/95 backdrop-blur-sm">
       <div className="mx-auto flex min-h-full max-w-3xl flex-col gap-6 px-6 py-10">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -200,11 +200,7 @@ export default function SpendingBreakdown({
                         <li key={item.id}>
                           <button
                             type="button"
-                            onClick={() => {
-                              // hand off to the reading pane behind this overlay
-                              selectItem(item);
-                              onClose();
-                            }}
+                            onClick={() => selectItem(item)}
                             className="flex w-full items-baseline gap-3 px-5 py-2.5 pl-11 text-left transition-colors hover:bg-white/[0.03]"
                           >
                             <span className="w-28 shrink-0 truncate text-[12px] text-[var(--ink-2)]">

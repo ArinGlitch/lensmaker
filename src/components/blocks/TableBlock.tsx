@@ -8,7 +8,6 @@ import {
   formatCell,
   isDateField,
   prepareRows,
-  applyFilters,
 } from "@/components/blockData";
 import { SCHEMA_DIGEST } from "@/lib/catalog";
 import { BLOCK_TITLE, MICRO, statusFor } from "@/components/theme";
@@ -45,17 +44,27 @@ export default function TableBlockView({
 }) {
   const selectItem = useSelectItem();
   const [page, setPage] = useState(0);
-  const total = applyFilters(items, block.filters).length;
-  // The model's limit is the page size now, not a cap: it still sets how
-  // dense the block is, but every record stays reachable.
+  /**
+   * What "matches the intent" means depends on how the model expressed it.
+   *
+   * With filters, the filters define the match, so every matching row should be
+   * reachable and `limit` is just the page size.
+   *
+   * With NO filters, `limit` IS the selection — "the 5 biggest", "the next 6
+   * to charge" — expressed as sort + cap. Paging past it would show rows the
+   * model deliberately left out, which is what made irrelevant emails appear.
+   */
   const perPage = block.limit ?? 15;
-  const all = prepareRows(items, {
+  const hasFilters = (block.filters?.length ?? 0) > 0;
+  const matching = prepareRows(items, {
     filters: block.filters,
     sortBy: block.sortBy,
     dir: block.dir ?? "desc",
   });
-  const current = clampPage(page, all.length, perPage);
-  const rows = pageSlice(all, current, perPage);
+  const scoped = hasFilters ? matching : matching.slice(0, perPage);
+  const total = scoped.length;
+  const current = clampPage(page, total, perPage);
+  const rows = pageSlice(scoped, current, perPage);
 
   const [headline, ...rest] = block.columns;
   const badgeCol = rest.find((c) => BADGE_FIELDS.has(c));

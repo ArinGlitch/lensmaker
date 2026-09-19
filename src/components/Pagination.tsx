@@ -72,6 +72,7 @@ export default function Pagination({
         {from}–{to} of {total} {noun}
       </span>
 
+      {pages <= 1 ? null : (
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -95,6 +96,7 @@ export default function Pagination({
           Next
         </button>
       </div>
+      )}
     </div>
   );
 }

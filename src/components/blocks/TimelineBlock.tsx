@@ -4,7 +4,6 @@ import { useState } from "react";
 
 import type { TimelineBlock, Item } from "@/lib/viewspec";
 import {
-  applyFilters,
   daysUntil,
   fieldValue,
   formatCell,
@@ -34,17 +33,27 @@ export default function TimelineBlockView({
 }) {
   const selectItem = useSelectItem();
   const [page, setPage] = useState(0);
-  const total = applyFilters(items, block.filters).length;
-  // The model's limit is the page size now, not a cap: it still sets how
-  // dense the block is, but every record stays reachable.
+  /**
+   * What "matches the intent" means depends on how the model expressed it.
+   *
+   * With filters, the filters define the match, so every matching row should be
+   * reachable and `limit` is just the page size.
+   *
+   * With NO filters, `limit` IS the selection — "the 5 biggest", "the next 6
+   * to charge" — expressed as sort + cap. Paging past it would show rows the
+   * model deliberately left out, which is what made irrelevant emails appear.
+   */
   const perPage = block.limit ?? 12;
-  const all = prepareRows(items, {
+  const hasFilters = (block.filters?.length ?? 0) > 0;
+  const matching = prepareRows(items, {
     filters: block.filters,
     sortBy: block.dateField,
     dir: block.dir ?? "asc",
   });
-  const current = clampPage(page, all.length, perPage);
-  const rows = pageSlice(all, current, perPage);
+  const scoped = hasFilters ? matching : matching.slice(0, perPage);
+  const total = scoped.length;
+  const current = clampPage(page, total, perPage);
+  const rows = pageSlice(scoped, current, perPage);
 
   return (
     <section className="rounded-xl border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">

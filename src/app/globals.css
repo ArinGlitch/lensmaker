@@ -269,3 +269,25 @@ body {
   .page-shell { transition: none; }
   .drawer-panel { animation: none; }
 }
+
+/*
+ * Any full-screen overlay that should sit *beside* the reading pane rather
+ * than behind it. Same contract as .page-shell: yield the right-hand column
+ * while a message is open. Used by SpendingBreakdown, so you can open one
+ * email after another without losing your place in the breakdown.
+ */
+@media (min-width: 1024px) {
+  .reading-inset {
+    transition: padding-right 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  :root[data-reading="true"] .reading-inset {
+    padding-right: var(--pane-w);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reading-inset {
+    transition: none;
+  }
+}
