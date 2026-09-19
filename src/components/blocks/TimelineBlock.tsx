@@ -19,6 +19,17 @@ import {
 import { useSelectItem } from "@/components/ItemSelection";
 import Pagination, { clampPage, pageSlice } from "@/components/Pagination";
 
+
+/**
+ * Rows per page. Both sides of the ablation toggle page at the same size, so
+ * the two screens feel like one product.
+ *
+ * `block.limit` still wins when the spec carries one — that is the model
+ * choosing density. It currently never does: /api/view strips `limit` from
+ * every block (bugs.MD #10), so this default is what actually applies.
+ */
+const PER_PAGE = 15;
+
 /**
  * A vertical rail with dated stops. Nothing here is a box in a grid — the rail,
  * the single column, and the date gutter are what make a deadline view read as
@@ -43,7 +54,7 @@ export default function TimelineBlockView({
    * to charge" — expressed as sort + cap. Paging past it would show rows the
    * model deliberately left out, which is what made irrelevant emails appear.
    */
-  const perPage = block.limit ?? 12;
+  const perPage = block.limit ?? PER_PAGE;
   const hasFilters = (block.filters?.length ?? 0) > 0;
   const matching = prepareRows(items, {
     filters: block.filters,

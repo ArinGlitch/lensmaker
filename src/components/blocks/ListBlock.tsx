@@ -8,6 +8,17 @@ import { BLOCK_TITLE } from "@/components/theme";
 import { useSelectItem } from "@/components/ItemSelection";
 import Pagination, { clampPage, pageSlice } from "@/components/Pagination";
 
+
+/**
+ * Rows per page. Both sides of the ablation toggle page at the same size, so
+ * the two screens feel like one product.
+ *
+ * `block.limit` still wins when the spec carries one — that is the model
+ * choosing density. It currently never does: /api/view strips `limit` from
+ * every block (bugs.MD #10), so this default is what actually applies.
+ */
+const PER_PAGE = 15;
+
 /**
  * Compact ranked rows — the densest block in the set. Numbered, divided by
  * hairlines, no panels: order is the message, so nothing competes with it.
@@ -31,7 +42,7 @@ export default function ListBlockView({
    * to charge" — expressed as sort + cap. Paging past it would show rows the
    * model deliberately left out, which is what made irrelevant emails appear.
    */
-  const perPage = block.limit ?? 10;
+  const perPage = block.limit ?? PER_PAGE;
   const hasFilters = (block.filters?.length ?? 0) > 0;
   const matching = prepareRows(items, {
     filters: block.filters,
