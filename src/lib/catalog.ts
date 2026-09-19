@@ -91,29 +91,29 @@ export const CATALOG: CatalogEntry[] = [
     type: "cards",
     use: "Grid of items. Use when each item matters individually.",
     props:
-      "primary, secondary?, badge?, sortBy?, dir?, limit?(1-24). " +
+      "primary, secondary?, badge?, sortBy?, dir?. " +
       "badge MUST be a short field (urgency, category, currency, amount) — " +
       "never summary, subject or riskReason.",
   },
   {
     type: "bar",
     use: "Compare a metric across categories.",
-    props: "groupBy, agg, field?, format?, limit?(1-12)",
+    props: "groupBy, agg, field?, format?",
   },
   {
     type: "timeline",
     use: "Chronological/date-driven. Use for deadlines and upcoming events.",
-    props: "dateField, primary, secondary?, dir?, limit?(1-20)",
+    props: "dateField, primary, secondary?, dir?",
   },
   {
     type: "list",
     use: "Compact ranked rows. Use when order matters more than detail.",
-    props: "primary, secondary?, sortBy?, dir?, limit?(1-20)",
+    props: "primary, secondary?, sortBy?, dir?",
   },
   {
     type: "table",
     use: "Dense multi-field comparison. Use sparingly.",
-    props: "columns(1-6), sortBy?, dir?, limit?(1-25)",
+    props: "columns(1-6), sortBy?, dir?",
   },
   {
     type: "callout",
@@ -128,7 +128,7 @@ export const CATALOG: CatalogEntry[] = [
       "reassurance or an alarm rather than a figure.",
     props:
       "headline(short phrase e.g. '3 things need you'), tone(good|warn|danger|neutral), " +
-      "detail?, primary?, secondary?, sortBy?, dir?, limit?(1-10)",
+      "detail?, primary?, secondary?, sortBy?, dir?",
   },
   {
     type: "calendar",
@@ -169,13 +169,13 @@ export const CATALOG: CatalogEntry[] = [
     use:
       "One row per group (usually vendor) rolled up across everything. Use for " +
       "'who am I paying' / 'per-vendor totals'.",
-    props: "groupBy, field?, agg?, format?, limit?(1-12)",
+    props: "groupBy, field?, agg?, format?",
   },
   {
     type: "smallMultiples",
     use:
       "Grid of identical mini-cards, one per group, so outliers stand out. Use for " +
       "'compare across categories/people at a glance'.",
-    props: "groupBy, field?, agg?, format?, limit?(1-12)",
+    props: "groupBy, field?, agg?, format?",
   },
 ];

@@ -63,13 +63,16 @@ export const VIEWSPEC_JSON_SCHEMA = {
           field: { type: "string" },
           format: { type: "string", enum: FORMAT },
           emphasis: { type: "string", enum: ["low", "normal", "high"] },
+          // NOTE: `limit` is deliberately absent. Pagination is a display
+          // concern owned by the components; when the model was told about
+          // limit it emitted values that failed validation and took the whole
+          // spec down with them, so the entire dashboard failed to generate.
           // cards / list / timeline
           primary: { type: "string" },
           secondary: { type: "string" },
           badge: { type: "string" },
           sortBy: { type: "string" },
           dir: { type: "string", enum: DIR },
-          limit: { type: "integer" },
           // bar
           groupBy: { type: "string" },
           // timeline

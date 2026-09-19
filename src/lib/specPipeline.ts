@@ -150,9 +150,9 @@ export function validateAndPrune(raw: unknown): {
     }
 
     seenTypes.add(b.type);
-    // Hackathon demo: show everything. The model routinely caps a block at 10
-    // or 12 rows, which silently hides most of an 85-row corpus. Drop its limit
-    // and let the block render the full filtered set.
+    // `limit` is no longer offered to the model (see llm/schema.ts), but a spec
+    // cached before that change may still carry one. Strip it so pagination —
+    // a display concern — stays owned by the components.
     kept.push("limit" in b ? ({ ...b, limit: undefined } as Block) : b);
   }
 
