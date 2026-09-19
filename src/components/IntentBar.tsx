@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { DEMO_INTENTS } from "@/lib/intents";
 
 /**
@@ -19,16 +19,23 @@ export default function IntentBar({
   isLoading: boolean;
 }) {
   const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   function submit(intent: string) {
     const trimmed = intent.trim();
     if (!trimmed || isLoading) return;
     onSubmit(trimmed);
-    // Clear on submit. A chip used to write into the field without moving the
-    // caret, so the next thing typed was appended to it and the two intents
-    // concatenated (bugs.MD #5). An always-empty field can't do that, and the
-    // question you asked stays visible as the view's intent_echo.
-    setValue("");
+
+    // The question stays in the bar, so you can always see what the screen is
+    // answering — including when it came from a chip rather than the keyboard.
+    setValue(trimmed);
+
+    // ...but it is left selected, which is what stops bugs.MD #5 coming back.
+    // A chip used to write into the field without moving the caret, so the next
+    // keystroke appended and the two intents ran together. Selected text is
+    // replaced by the next keystroke instead. Clicking into the field still
+    // places a caret normally, because editing the question is then deliberate.
+    requestAnimationFrame(() => inputRef.current?.select());
   }
 
   return (
@@ -48,6 +55,7 @@ export default function IntentBar({
         </span>
 
         <input
+          ref={inputRef}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="What do you want to see?"
