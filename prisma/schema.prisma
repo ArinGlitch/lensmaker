@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String      @id @default(cuid())
+  email      String      @unique
+  password   String
+  createdAt  DateTime    @default(now())
+  savedViews SavedView[]
+}
+
+model Item {
+  id            String    @id @default(cuid())
+  vendor        String
+  subject       String
+  category      String
+  amount        Float?
+  currency      String    @default("CAD")
+  chargeDate    DateTime?
+  deadlineDate  DateTime?
+  receivedAt    DateTime
+  summary       String
+  urgency       String
+  isSuspicious  Boolean   @default(false)
+  riskReason    String?
+  sourceExcerpt String
+  createdAt     DateTime  @default(now())
+
+  @@index([category])
+  @@index([chargeDate])
+  @@index([deadlineDate])
+}
+
+model SavedView {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  intent    String
+  spec      Json
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model ViewSpecCache {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  intent    String
+  provider  String
+  spec      Json
+  createdAt DateTime @default(now())
+}

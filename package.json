@@ -1,0 +1,54 @@
+{
+  "name": "lensmaker",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "3.994.0",
+    "@aws-sdk/credential-providers": "3.994.0",
+    "@google/genai": "1.5.0",
+    "@prisma/client": "6.19.3",
+    "@tanstack/react-query": "5.90.20",
+    "bcryptjs": "2.4.3",
+    "jose": "6.0.11",
+    "next": "15.5.7",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "recharts": "2.15.3",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.1.11",
+    "@types/bcryptjs": "2.4.6",
+    "@types/node": "20.19.9",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
+    "eslint": "9.31.0",
+    "eslint-config-next": "15.5.7",
+    "prisma": "6.19.3",
+    "tailwindcss": "4.1.11",
+    "tsx": "4.21.0",
+    "typescript": "5.8.3"
+  },
+  "overrides": {
+    "brace-expansion": "1.1.12",
+    "which-typed-array": "1.1.22",
+    "typed-array-byte-offset": "1.0.4",
+    "enhanced-resolve": "5.25.0",
+    "is-core-module": "2.16.2"
+  }
+}

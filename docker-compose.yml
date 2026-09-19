@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: lensmaker
+      POSTGRES_PASSWORD: lensmaker
+      POSTGRES_DB: lensmaker
+    ports:
+      - "5434:5432"
+    volumes:
+      - lensmaker_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lensmaker"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+volumes:
+  lensmaker_pgdata:
