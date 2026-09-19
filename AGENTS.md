@@ -26,6 +26,25 @@ Read `plan.md` (architecture) and `CLAUDE.md` (conventions) first. This file ass
 
 Conflict rule: if a type mismatch appears, `viewspec.ts` wins. Fix your side.
 
+### The one file both devs touch — collision protocol
+
+`src/app/page.tsx` is owned by **A** but imports almost everything **B** builds. To keep this conflict-free:
+
+1. **Dev A writes every import up front, before Dev B delivers**, pointing at the real final paths.
+2. **Dev A creates a one-line placeholder for each undelivered B component** on first scaffold, e.g.
+   ```tsx
+   // src/components/IntentBar.tsx — PLACEHOLDER, owned by Dev B, do not flesh out
+   export default function IntentBar(_: any) { return null }
+   ```
+3. **Dev B replaces the placeholder body.** The file path, the default export, and the props contract in `AGENTS.md` are fixed — B must not rename the file or change the exported symbol.
+4. **Dev A never edits a B component's body.** If a placeholder is wrong, A fixes `page.tsx` or asks B — A does not implement B's component.
+
+Because every placeholder already exists with the correct name and path, both devs can work without ever editing the same lines. `page.tsx` changes only on A's side; component bodies change only on B's side.
+
+### Props contracts are frozen at A0
+
+The prop signatures in the Dev B briefs below are a **contract, not a suggestion**. Dev A codes `page.tsx` against them immediately; Dev B implements to them. Neither dev changes a prop name without telling the other, because that silently breaks the other's file.
+
 ---
 
 ## Dev A — architecture, AI, auth, integration
@@ -38,6 +57,7 @@ Dev A runs sub-agents and takes everything with cross-cutting risk. Tasks are or
 - `prisma/schema.prisma` per `plan.md` §5 + first migration
 - **`src/lib/viewspec.ts`** — Zod schemas + inferred types for all 7 block types and `ViewSpec`
 - **`src/lib/catalog.ts`** — `CatalogEntry[]` describing each block for the prompt, plus `SchemaDigest` (field names, types, example values)
+- **Placeholder files for all 12 Dev B components** — correct path, correct default-export name, `return null` body, and a comment marking them as B-owned. This is what lets both devs work without touching the same lines.
 - Commit and push. Tell Dev B it's ready.
 
 ### A1 — Auth (do before anything else is testable)
@@ -167,9 +187,23 @@ Different shapes, different densities, different visual rhythm.
 ## Handoff & sequencing
 
 ```
-A0 (scaffold + viewspec + catalog) ──► PUSH ──┬──► Dev A: A1 → A2 → A3 → A4 → A5 → A6 → A7 → A8
-                                              └──► Dev B: B1→B2→B3→B4 → B7 → B8 → B9 → B12 → B5→B6 → B10 → B11
+PHASE 0 — SERIAL (~30-45 min). Dev B cannot start.
+  Dev A: A0 scaffold + viewspec.ts + catalog.ts + B placeholders ──► PUSH
+  Dev B: read plan.md / CLAUDE.md / AGENTS.md; set up env; decide visual
+         language for the 4 P0 blocks (shape, density, colour) on paper
+
+PHASE 1 — FULLY PARALLEL (rest of the build). No further blocking.
+  Dev A: A1 auth → A2 data → A3 llm → A4 /api/view → A5 renderer+page
+         → A6 seed → A7 views → A8 harden
+  Dev B: B1 Stat → B2 Cards → B3 Bar → B4 Timeline → B7 IntentBar
+         → B8 EmptyState → B9 ablation → B12 login → B5/B6 → B10 → B11
 ```
+
+**Why Phase 0 is serial:** every Dev B file begins with `import type { ... } from "@/lib/viewspec"`. Without the contract nothing compiles. This is the only blocking dependency in the build — get A0 pushed fast and it costs ~30 minutes of one dev's time, not two.
+
+**Integration cadence:** Dev B pushes each component as it's finished. Dev A pulls before touching `page.tsx`. Because placeholders already exist with final names and props, a `git pull` upgrades a `null` placeholder into a real component with no code change on A's side.
+
+**First joint checkpoint:** as soon as A4 (`/api/view`) and B1–B4 (four blocks) are both in, run the demo script end-to-end. That is the moment you find out whether the layouts actually look different. Do not defer this to the last hour.
 
 Dev B's priority order matters: **B1–B4 first** (the four P0 blocks), then IntentBar, EmptyState, ablation, login. B5/B6/B10/B11 are valuable but cuttable if time runs short.
 
