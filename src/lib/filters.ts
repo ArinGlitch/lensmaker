@@ -10,6 +10,7 @@ export class DisallowedFieldError extends Error {
 }
 
 function coerce(field: string, value: unknown): unknown {
+  if (value === null) return null;
   const t = TYPE_OF.get(field);
   if (t === "date" && typeof value === "string") {
     const d = new Date(value);
