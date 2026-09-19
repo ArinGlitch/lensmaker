@@ -26,8 +26,8 @@
     "bcryptjs": "2.4.3",
     "jose": "6.0.11",
     "next": "15.5.7",
-    "react": "19.0.0",
-    "react-dom": "19.0.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "recharts": "2.15.3",
     "zod": "3.25.76"
   },
@@ -49,6 +49,7 @@
     "which-typed-array": "1.1.22",
     "typed-array-byte-offset": "1.0.4",
     "enhanced-resolve": "5.25.0",
-    "is-core-module": "2.16.2"
+    "is-core-module": "2.16.2",
+    "@tybys/wasm-util": "0.10.3"
   }
 }
