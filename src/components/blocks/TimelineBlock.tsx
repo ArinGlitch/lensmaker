@@ -4,7 +4,6 @@ import { useState } from "react";
 
 import type { TimelineBlock, Item } from "@/lib/viewspec";
 import {
-  applyFilters,
   daysUntil,
   fieldValue,
   formatCell,
@@ -18,7 +17,7 @@ import {
   statusForDays,
 } from "@/components/theme";
 import { useSelectItem } from "@/components/ItemSelection";
-import ShowAll from "@/components/ShowAll";
+import Pagination, { clampPage, pageSlice } from "@/components/Pagination";
 
 /**
  * A vertical rail with dated stops. Nothing here is a box in a grid — the rail,
@@ -33,14 +32,28 @@ export default function TimelineBlockView({
   items: Item[];
 }) {
   const selectItem = useSelectItem();
-  const [expanded, setExpanded] = useState(false);
-  const total = applyFilters(items, block.filters).length;
-  const rows = prepareRows(items, {
+  const [page, setPage] = useState(0);
+  /**
+   * What "matches the intent" means depends on how the model expressed it.
+   *
+   * With filters, the filters define the match, so every matching row should be
+   * reachable and `limit` is just the page size.
+   *
+   * With NO filters, `limit` IS the selection — "the 5 biggest", "the next 6
+   * to charge" — expressed as sort + cap. Paging past it would show rows the
+   * model deliberately left out, which is what made irrelevant emails appear.
+   */
+  const perPage = block.limit ?? 12;
+  const hasFilters = (block.filters?.length ?? 0) > 0;
+  const matching = prepareRows(items, {
     filters: block.filters,
     sortBy: block.dateField,
     dir: block.dir ?? "asc",
-    limit: expanded ? undefined : block.limit,
   });
+  const scoped = hasFilters ? matching : matching.slice(0, perPage);
+  const total = scoped.length;
+  const current = clampPage(page, total, perPage);
+  const rows = pageSlice(scoped, current, perPage);
 
   return (
     <section className="rounded-xl border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
@@ -95,11 +108,12 @@ export default function TimelineBlockView({
           })}
         </ol>
       )}
-      <ShowAll
-        shown={rows.length}
+      <Pagination
+        page={current}
         total={total}
-        expanded={expanded}
-        onToggle={() => setExpanded((v) => !v)}
+        perPage={perPage}
+        onPage={setPage}
+        variant="inline"
         noun="events"
       />
     </section>

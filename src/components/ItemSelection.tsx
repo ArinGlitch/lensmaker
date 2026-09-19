@@ -10,11 +10,17 @@ import type { Item } from "@/lib/viewspec";
  *
  * Defaults to a no-op so a block rendered outside the provider (e.g. in an
  * isolated harness) still works.
+ *
+ * Passing `null` clears the selection — it is how an overlay can dismiss the
+ * reading pane along with itself. page.tsx already passes a setState that
+ * accepts it.
  */
-const ItemSelectionContext = createContext<(item: Item) => void>(() => {});
+const ItemSelectionContext = createContext<(item: Item | null) => void>(
+  () => {},
+);
 
 export const ItemSelectionProvider = ItemSelectionContext.Provider;
 
-export function useSelectItem(): (item: Item) => void {
+export function useSelectItem(): (item: Item | null) => void {
   return useContext(ItemSelectionContext);
 }

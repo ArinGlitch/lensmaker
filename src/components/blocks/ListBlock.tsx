@@ -3,10 +3,10 @@
 import { useState } from "react";
 
 import type { ListBlock, Item } from "@/lib/viewspec";
-import { formatCell, prepareRows, applyFilters } from "@/components/blockData";
+import { formatCell, prepareRows } from "@/components/blockData";
 import { BLOCK_TITLE } from "@/components/theme";
 import { useSelectItem } from "@/components/ItemSelection";
-import ShowAll from "@/components/ShowAll";
+import Pagination, { clampPage, pageSlice } from "@/components/Pagination";
 
 /**
  * Compact ranked rows — the densest block in the set. Numbered, divided by
@@ -20,14 +20,28 @@ export default function ListBlockView({
   items: Item[];
 }) {
   const selectItem = useSelectItem();
-  const [expanded, setExpanded] = useState(false);
-  const total = applyFilters(items, block.filters).length;
-  const rows = prepareRows(items, {
+  const [page, setPage] = useState(0);
+  /**
+   * What "matches the intent" means depends on how the model expressed it.
+   *
+   * With filters, the filters define the match, so every matching row should be
+   * reachable and `limit` is just the page size.
+   *
+   * With NO filters, `limit` IS the selection — "the 5 biggest", "the next 6
+   * to charge" — expressed as sort + cap. Paging past it would show rows the
+   * model deliberately left out, which is what made irrelevant emails appear.
+   */
+  const perPage = block.limit ?? 10;
+  const hasFilters = (block.filters?.length ?? 0) > 0;
+  const matching = prepareRows(items, {
     filters: block.filters,
     sortBy: block.sortBy,
     dir: block.dir ?? "desc",
-    limit: expanded ? undefined : block.limit,
   });
+  const scoped = hasFilters ? matching : matching.slice(0, perPage);
+  const total = scoped.length;
+  const current = clampPage(page, total, perPage);
+  const rows = pageSlice(scoped, current, perPage);
 
   return (
     <section className="rounded-xl border border-[var(--line)] bg-[var(--panel)] px-5 py-4">
@@ -47,7 +61,7 @@ export default function ListBlockView({
                 className="flex w-full items-baseline gap-4 px-1 py-2 text-left transition-colors hover:bg-white/[0.03]"
               >
               <span className="tnum w-6 shrink-0 text-right font-mono text-[11px] text-[var(--ink-4)]">
-                {String(index + 1).padStart(2, "0")}
+                {String(current * perPage + index + 1).padStart(2, "0")}
               </span>
               <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--ink)]">
                 {formatCell(item, block.primary)}
@@ -62,11 +76,12 @@ export default function ListBlockView({
           ))}
         </ol>
       )}
-      <ShowAll
-        shown={rows.length}
+      <Pagination
+        page={current}
         total={total}
-        expanded={expanded}
-        onToggle={() => setExpanded((v) => !v)}
+        perPage={perPage}
+        onPage={setPage}
+        variant="inline"
         noun="rows"
       />
     </section>

@@ -299,3 +299,50 @@ elsewhere and this entry can be closed as a non-issue.
 
 **Note:** picking which block types answer a question is close to the case
 `thinkingBudget: 0` exists for. It is a cheap thing to try before the demo.
+
+
+---
+
+## 10. `/api/view` strips `limit`, so blocks show rows the intent excluded
+
+**Where:** `src/app/api/view/route.ts:117` — **Dev A's file. Reported, not fixed.**
+
+**Severity:** the generative screen answers a narrower question than it shows.
+
+**Symptom:** reported from the running app — a block shows emails that have
+nothing to do with what was asked.
+
+**Cause — two reasonable changes that cancel out.** The model expresses
+selection in two different ways:
+
+- **With filters**, the filters define the match. Everything matching should be
+  reachable, and `limit` is only about density.
+- **With no filters**, `limit` *is* the selection — "the 5 biggest", "the next
+  6 to charge" — expressed as sort + cap. Drop the cap and the block silently
+  widens to the whole corpus.
+
+`/api/view` now deletes `limit` from every block:
+
+```ts
+kept.push("limit" in b ? ({ ...b, limit: undefined } as Block) : b);
+```
+
+The reasoning there is sound on its own — a limit of 10 hid most of an 85-row
+corpus, and hidden data is worse than a long page. But it also discards the
+only signal the model had for "these rows, not those", so a sort+cap spec now
+renders all 85 rows.
+
+**Already handled client-side, as far as it can be.** The blocks tell the two
+cases apart: with filters they page through every match, without filters they
+honour `limit` as a cap. That rule is live and correct — it just cannot fire,
+because `limit` is `undefined` by the time it arrives.
+
+**Why the original reason no longer applies.** `limit` was stripped to stop
+rows being hidden. Nothing is hidden any more: every block paginates, so the
+full set is always reachable while the page stays readable. The cap can be
+restored without bringing back the problem it was removed to solve.
+
+**Suggested fix:** stop stripping `limit` and let it through as the page size /
+cap. If that feels risky, clamp it upward instead of deleting it (e.g.
+`Math.max(block.limit, 10)`), which keeps the model's intent while guaranteeing
+a useful page.

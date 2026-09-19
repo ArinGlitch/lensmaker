@@ -21,21 +21,31 @@ export default function IntentBar({
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  /** Compose the screen. Only ever called deliberately — button or Enter. */
   function submit(intent: string) {
     const trimmed = intent.trim();
     if (!trimmed || isLoading) return;
     onSubmit(trimmed);
-
     // The question stays in the bar, so you can always see what the screen is
-    // answering — including when it came from a chip rather than the keyboard.
+    // answering. Left unselected: a chip fills the field and nothing more, so
+    // there is no pending selection for a later keystroke to clobber.
     setValue(trimmed);
+  }
 
-    // ...but it is left selected, which is what stops bugs.MD #5 coming back.
-    // A chip used to write into the field without moving the caret, so the next
-    // keystroke appended and the two intents ran together. Selected text is
-    // replaced by the next keystroke instead. Clicking into the field still
-    // places a caret normally, because editing the question is then deliberate.
-    requestAnimationFrame(() => inputRef.current?.select());
+  /**
+   * A chip loads the question into the bar and stops there. It used to compose
+   * on click, which took the decision away from you — now the chip is a
+   * shortcut for typing, not for asking.
+   */
+  function loadExample(example: string) {
+    setValue(example);
+    inputRef.current?.focus();
+    // caret to the end, so typing continues the question rather than replacing
+    // it and nothing is left highlighted
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (el) el.setSelectionRange(el.value.length, el.value.length);
+    });
   }
 
   return (
@@ -79,7 +89,7 @@ export default function IntentBar({
             key={example}
             type="button"
             disabled={isLoading}
-            onClick={() => submit(example)}
+            onClick={() => loadExample(example)}
             className="rounded-lg border border-[var(--line)] bg-white/[0.02] px-2.5 py-1.5 text-[12px] text-[var(--ink-3)] transition-colors hover:border-[var(--line-strong)] hover:bg-white/[0.05] hover:text-[var(--ink)] disabled:opacity-35"
           >
             {example}
