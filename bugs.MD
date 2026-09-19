@@ -11,10 +11,10 @@ throwaway harness and screenshotting them in headless Chrome, not by reading cod
 | 3 | Client-side filter mirror inverted `null` semantics | demo-breaking | **Fixed** |
 | 4 | ESLint config fails to load, repo-wide | annoyance | **Fixed** by Dev A (`c4e5692`) |
 | 5 | Intent chip appends to existing text instead of replacing | demo-breaking | **Fixed** |
-| 6 | `npm run db:seed` cannot see `DATABASE_URL` | blocks first run | **Open** — Dev A's file |
+| 6 | `npm run db:seed` cannot see `DATABASE_URL` | blocks first run | **Fixed** by Dev A |
 | 7 | Gemini provider dies on a missing peer dependency | blocks the demo provider | **Fixed** |
-| 8 | One malformed block sinks the whole spec → every intent falls back | **demo-breaking** | **Open** — Dev A's files |
-| 9 | Gemini runs with thinking enabled, against `plan.md` §8 | latency | **Open** — Dev A's file |
+| 8 | One malformed block sinks the whole spec → every intent falls back | **demo-breaking** | **Fixed** by Dev A |
+| 9 | Gemini runs with thinking enabled, against `plan.md` §8 | latency | **Fixed** by Dev A |
 
 ---
 

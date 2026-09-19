@@ -38,6 +38,9 @@ export class GeminiProvider implements LLMProvider {
         responseMimeType: "application/json",
         responseSchema: VIEWSPEC_JSON_SCHEMA as unknown as object,
         maxOutputTokens: 2048,
+        // plan.md §8: layout choice needs no deep reasoning, and thinking
+        // parts were adding latency to every call for no benefit.
+        thinkingConfig: { thinkingBudget: 0 },
       },
     });
     const latencyMs = Date.now() - started;
@@ -62,6 +65,7 @@ export class GeminiProvider implements LLMProvider {
         responseMimeType: "application/json",
         responseSchema: EXTRACTION_JSON_SCHEMA as unknown as object,
         maxOutputTokens: 1024,
+        thinkingConfig: { thinkingBudget: 0 },
       },
     });
     const latencyMs = Date.now() - started;

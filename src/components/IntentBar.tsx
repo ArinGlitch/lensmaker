@@ -1,17 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { DEMO_INTENTS } from "@/lib/intents";
 
 /**
  * The only input in the app. There is no filter, no sort control and no column
  * picker anywhere — you restate what you care about and the screen is rebuilt.
  */
-const EXAMPLES = [
-  "what's about to charge me?",
-  "what are my hard deadlines?",
-  "what's trying to scam me?",
-  "what am I spending most on?",
-] as const;
+// Shared with scripts/warm-cache.ts so a chip can never drift out of the warm
+// cache and trigger a live model call mid-demo.
+const EXAMPLES = DEMO_INTENTS;
 
 export default function IntentBar({
   onSubmit,
