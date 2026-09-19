@@ -6,7 +6,7 @@ import type { CardsBlock, Item } from "@/lib/viewspec";
 import { formatCell, prepareRows, applyFilters } from "@/components/blockData";
 import { BLOCK_TITLE, STATUS_PILL, statusFor } from "@/components/theme";
 import { useSelectItem } from "@/components/ItemSelection";
-import ShowAll from "@/components/ShowAll";
+import Pagination, { clampPage, pageSlice } from "@/components/Pagination";
 
 /**
  * A grid of panels — used when each row matters individually. Many small boxes
@@ -24,14 +24,18 @@ export default function CardsBlockView({
   items: Item[];
 }) {
   const selectItem = useSelectItem();
-  const [expanded, setExpanded] = useState(false);
+  const [page, setPage] = useState(0);
   const total = applyFilters(items, block.filters).length;
-  const rows = prepareRows(items, {
+  // The model's limit is the page size now, not a cap: it still sets how
+  // dense the block is, but every record stays reachable.
+  const perPage = block.limit ?? 9;
+  const all = prepareRows(items, {
     filters: block.filters,
     sortBy: block.sortBy,
     dir: block.dir,
-    limit: expanded ? undefined : block.limit ?? 9,
   });
+  const current = clampPage(page, all.length, perPage);
+  const rows = pageSlice(all, current, perPage);
 
   return (
     <section>
@@ -94,11 +98,12 @@ export default function CardsBlockView({
           })}
         </div>
       )}
-      <ShowAll
-        shown={rows.length}
+      <Pagination
+        page={current}
         total={total}
-        expanded={expanded}
-        onToggle={() => setExpanded((v) => !v)}
+        perPage={perPage}
+        onPage={setPage}
+        variant="inline"
         noun="cards"
       />
     </section>

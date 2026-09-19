@@ -18,7 +18,7 @@ import {
   statusForDays,
 } from "@/components/theme";
 import { useSelectItem } from "@/components/ItemSelection";
-import ShowAll from "@/components/ShowAll";
+import Pagination, { clampPage, pageSlice } from "@/components/Pagination";
 
 /**
  * A vertical rail with dated stops. Nothing here is a box in a grid — the rail,
@@ -33,14 +33,18 @@ export default function TimelineBlockView({
   items: Item[];
 }) {
   const selectItem = useSelectItem();
-  const [expanded, setExpanded] = useState(false);
+  const [page, setPage] = useState(0);
   const total = applyFilters(items, block.filters).length;
-  const rows = prepareRows(items, {
+  // The model's limit is the page size now, not a cap: it still sets how
+  // dense the block is, but every record stays reachable.
+  const perPage = block.limit ?? 12;
+  const all = prepareRows(items, {
     filters: block.filters,
     sortBy: block.dateField,
     dir: block.dir ?? "asc",
-    limit: expanded ? undefined : block.limit ?? 12,
   });
+  const current = clampPage(page, all.length, perPage);
+  const rows = pageSlice(all, current, perPage);
 
   return (
     <section className="rounded-xl border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
@@ -95,11 +99,12 @@ export default function TimelineBlockView({
           })}
         </ol>
       )}
-      <ShowAll
-        shown={rows.length}
+      <Pagination
+        page={current}
         total={total}
-        expanded={expanded}
-        onToggle={() => setExpanded((v) => !v)}
+        perPage={perPage}
+        onPage={setPage}
+        variant="inline"
         noun="events"
       />
     </section>

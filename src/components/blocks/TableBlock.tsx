@@ -13,7 +13,7 @@ import {
 import { SCHEMA_DIGEST } from "@/lib/catalog";
 import { BLOCK_TITLE, MICRO, statusFor } from "@/components/theme";
 import { useSelectItem } from "@/components/ItemSelection";
-import ShowAll from "@/components/ShowAll";
+import Pagination, { clampPage, pageSlice } from "@/components/Pagination";
 import MailRow from "@/components/MailRow";
 
 const NUMERIC = new Set(
@@ -44,14 +44,18 @@ export default function TableBlockView({
   items: Item[];
 }) {
   const selectItem = useSelectItem();
-  const [expanded, setExpanded] = useState(false);
+  const [page, setPage] = useState(0);
   const total = applyFilters(items, block.filters).length;
-  const rows = prepareRows(items, {
+  // The model's limit is the page size now, not a cap: it still sets how
+  // dense the block is, but every record stays reachable.
+  const perPage = block.limit ?? 15;
+  const all = prepareRows(items, {
     filters: block.filters,
     sortBy: block.sortBy,
     dir: block.dir ?? "desc",
-    limit: expanded ? undefined : block.limit ?? 15,
   });
+  const current = clampPage(page, all.length, perPage);
+  const rows = pageSlice(all, current, perPage);
 
   const [headline, ...rest] = block.columns;
   const badgeCol = rest.find((c) => BADGE_FIELDS.has(c));
@@ -96,12 +100,11 @@ export default function TableBlockView({
           ))}
         </ul>
       )}
-
-      <ShowAll
-        shown={rows.length}
+      <Pagination
+        page={current}
         total={total}
-        expanded={expanded}
-        onToggle={() => setExpanded((v) => !v)}
+        perPage={perPage}
+        onPage={setPage}
         noun="rows"
       />
     </section>
