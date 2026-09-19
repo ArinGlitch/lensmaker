@@ -26,6 +26,11 @@ export default function IntentBar({
     const trimmed = intent.trim();
     if (!trimmed || isLoading) return;
     onSubmit(trimmed);
+    // Clear on submit. A chip used to write into the field without moving the
+    // caret, so the next thing typed was appended to it and the two intents
+    // concatenated (bugs.MD #5). An always-empty field can't do that, and the
+    // question you asked stays visible as the view's intent_echo.
+    setValue("");
   }
 
   return (
@@ -60,10 +65,7 @@ export default function IntentBar({
             key={example}
             type="button"
             disabled={isLoading}
-            onClick={() => {
-              setValue(example);
-              submit(example);
-            }}
+            onClick={() => submit(example)}
             className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-neutral-300 transition-colors hover:border-white/25 hover:text-white disabled:opacity-40"
           >
             {example}

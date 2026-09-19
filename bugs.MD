@@ -9,7 +9,10 @@ throwaway harness and screenshotting them in headless Chrome, not by reading cod
 | 1 | Bar chart rendered with no bars | demo-breaking | **Fixed** |
 | 2 | Page plane renders white on a light-mode machine | demo-breaking | **Fixed** |
 | 3 | Client-side filter mirror inverted `null` semantics | demo-breaking | **Fixed** |
-| 4 | ESLint config fails to load, repo-wide | annoyance | **Open** — Dev A's file |
+| 4 | ESLint config fails to load, repo-wide | annoyance | **Fixed** by Dev A (`c4e5692`) |
+| 5 | Intent chip appends to existing text instead of replacing | demo-breaking | **Fixed** |
+| 6 | `npm run db:seed` cannot see `DATABASE_URL` | blocks first run | **Open** — Dev A's file |
+| 7 | Gemini provider dies on a missing peer dependency | blocks the demo provider | **Fixed** |
 
 ---
 
@@ -108,7 +111,7 @@ without it. Worth doing — it may surface real findings the first time it runs.
 
 ## 5. Intent chip appends to existing text instead of replacing it
 
-**Where:** `src/components/IntentBar.tsx` (Dev B's file — reported, not fixed)
+**Where:** `src/components/IntentBar.tsx` — **Fixed.**
 
 **Severity:** demo-breaking if triggered on stage.
 
@@ -125,9 +128,68 @@ The composed intent is nonsense, and on stage it looks like the app is broken.
 **Cause:** a chip click sets the input value but does not select or clear it, so
 subsequent typing is appended at the caret.
 
-**Suggested fix (Dev B's call):** on chip click, either clear the field before
-setting the value, or select-all so the next keystroke replaces it. Clearing the
-field after a successful submit would also prevent it.
+**Fix applied:** the field clears on every successful submit, and a chip now
+calls `submit()` directly instead of writing into the input first. An
+always-empty field cannot concatenate. Nothing is lost by clearing — the
+question you asked stays on screen as the view's `intent_echo`.
 
-**Workaround until fixed:** select-all (⌘A) before typing a fresh intent, or
-click a chip and submit it directly without editing.
+Thanks for driving a real browser to find this; it was invisible from the
+component harness, where nothing types after a chip click.
+
+---
+
+## 6. `npm run db:seed` cannot see `DATABASE_URL`
+
+**Where:** `package.json` (`db:seed` script) — **not fixed, Dev A's file**
+
+**Symptom:** following the README exactly, the first run dies:
+
+```
+PrismaClientInitializationError:
+error: Environment variable not found: DATABASE_URL.
+```
+
+**Cause:** `prisma migrate` works because the Prisma CLI loads `.env` itself.
+`tsx prisma/seed.ts` does not — tsx has no implicit `.env` loading — so the
+seed script starts with an empty environment.
+
+**Workaround:** `npx tsx --env-file=.env prisma/seed.ts`
+
+**Suggested fix (one flag):**
+
+```json
+"db:seed": "tsx --env-file=.env prisma/seed.ts"
+```
+
+---
+
+## 7. Gemini provider dies on a missing peer dependency
+
+**Where:** `package.json` — **Fixed.**
+
+**Severity:** blocks the demo provider entirely.
+
+**Symptom:** with `LLM_PROVIDER=gemini`, every intent returned the fallback
+layout. The response was a valid 200 with `source:"fallback"`, so from the
+outside it looked like Gemini was simply never producing a usable spec. The
+server log had the real reason:
+
+```
+[view] provider error Error: Cannot find package '@modelcontextprotocol/sdk'
+       imported from node_modules/@google/genai/dist/node/index.mjs
+```
+
+**Cause:** `@google/genai@1.5.0` declares `@modelcontextprotocol/sdk` as an
+**optional** peer dependency, but its built entrypoint imports it
+unconditionally. Optional in the manifest, required in practice.
+
+**Fix applied:** added `@modelcontextprotocol/sdk` to dependencies.
+
+**Worth noting:** this is the cost of the never-fail guarantee. `/api/view`
+turning every provider error into a fallback is right for the demo and hides
+exactly this class of bug during development. `scripts/check-gemini.ts` exists
+to see through it:
+
+```bash
+npx tsx --env-file=.env scripts/check-gemini.ts
+```
