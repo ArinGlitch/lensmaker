@@ -176,8 +176,11 @@ export default function Home() {
                 <div>
                   <h2 className="text-lg font-medium">{spec.title}</h2>
                   <p className="text-xs text-neutral-500">
-                    {spec.intent_echo} · {view?.source} · {view?.provider} ·{" "}
-                    {view?.latencyMs}ms · confidence {spec.confidence}
+                    {/* Provider, cache source and latency are deliberately NOT
+                        shown here — naming the model on screen is a detail the
+                        viewer does not need. They remain visible in the spec
+                        inspector for anyone who wants to check the machinery. */}
+                    {spec.intent_echo}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">

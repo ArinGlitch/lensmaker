@@ -29,15 +29,14 @@ export default function FallbackNotice({
       <p className="mt-1.5 text-sm leading-relaxed text-amber-100/90">
         {notReached ? (
           <>
-            This screen was not composed for your question. The{" "}
-            <span className="font-mono">{provider}</span> provider returned an
-            error, so a fixed fallback layout is being shown instead.
+            This screen was not composed for your question. The model could
+            not be reached, so a fixed fallback layout is being shown instead.
           </>
         ) : (
           <>
-            The <span className="font-mono">{provider}</span> provider answered,
-            but the layout it returned failed validation, so a fixed fallback is
-            being shown. Open <em>Inspect spec</em> to see what it sent.
+            The model answered, but the layout it returned failed validation,
+            so a fixed fallback is being shown. Open <em>Inspect spec</em> to
+            see what it sent.
           </>
         )}
       </p>
@@ -45,8 +44,8 @@ export default function FallbackNotice({
         {!notReached
           ? "This is a bug in the schema or the prompt, not in your question."
           : provider === "haiku"
-            ? "Usually an expired SSO session: run `aws sso login --profile bedrock`, then ask again."
-            : "Check GEMINI_API_KEY and quota: run `npm run gemini:check` to see the real error."}
+            ? "Usually an expired session — re-authenticate and ask again."
+            : "Check the API key and quota, then ask again."}
       </p>
     </div>
   );

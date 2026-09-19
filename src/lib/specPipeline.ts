@@ -173,9 +173,11 @@ function mentionsSecurity(intent: string): boolean {
   return /scam|phish|fraud|suspicious|security|threat|danger/i.test(intent);
 }
 
+// No trailing \b: "deadlines" must match "deadline", and it did not, which is
+// why a plural intent kept rendering items months overdue.
 const UPCOMING_RE =
-  /\b(upcoming|due|deadline|coming up|this week|next week|soon|ahead|about to|screwed|charge)\b/i;
-const PAST_RE = /\b(missed|overdue|late|already|past|expired|did i miss|forgot)\b/i;
+  /\b(upcoming|due|deadline|coming up|this week|next week|soon|ahead|about to|screwed|charge|renew|expir|when is|what.s next)/i;
+const PAST_RE = /\b(missed|overdue|late|already|past due|expired|did i miss|forgot|ignoring|been sitting)/i;
 
 /**
  * Forces a date window on date-driven blocks when the intent is clearly about
