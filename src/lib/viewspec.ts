@@ -145,6 +145,24 @@ export const ViewSpecSchema = z.object({
   notes: z.string().max(400).optional(),
 });
 
+/**
+ * The envelope WITHOUT validating block shapes — blocks come through as
+ * `unknown` so the server can validate each one individually.
+ *
+ * Parsing blocks as part of the whole object meant one malformed block failed
+ * the entire spec and discarded the good blocks with it, so every intent
+ * served the fallback. Validate the envelope with this, then each block with
+ * `BlockSchema`, and drop only the failures.
+ */
+export const ViewSpecEnvelopeSchema = z.object({
+  title: z.string().min(1).max(120),
+  intent_echo: z.string().min(1).max(200),
+  blocks: z.array(z.unknown()).min(1).max(8),
+  confidence: z.enum(["low", "medium", "high"]),
+  insufficient_evidence: z.boolean(),
+  notes: z.string().max(400).optional(),
+});
+
 /* ---------------------------------- types --------------------------------- */
 
 export type FilterOp = z.infer<typeof FilterOpSchema>;
