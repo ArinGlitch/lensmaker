@@ -45,19 +45,22 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
+        <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--ink-4)]">
           Lensmaker
+        </p>
+        <h1 className="mt-3 text-[28px] font-semibold leading-tight tracking-[-0.02em] text-[var(--ink)]">
+          State what you care about.
         </h1>
-        <p className="mt-1 text-sm text-neutral-400">
-          State what you care about. The model composes the screen.
+        <p className="mt-2 text-[14px] leading-relaxed text-[var(--ink-3)]">
+          The model composes the screen. You never touch a filter.
         </p>
 
         <form
           onSubmit={handleSubmit}
-          className="mt-8 flex flex-col gap-4 rounded-xl border border-white/10 bg-[#1a1a19] p-6"
+          className="relative mt-8 flex flex-col gap-4 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--panel)] p-6"
         >
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+            <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--ink-4)]">
               Email
             </span>
             <input
@@ -66,12 +69,12 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="username"
               required
-              className="rounded-lg border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white outline-none focus:border-white/35"
+              className="rounded-lg border border-[var(--line-strong)] bg-[#0b0b0e] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition-colors focus:border-[var(--accent)]"
             />
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+            <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--ink-4)]">
               Password
             </span>
             <input
@@ -80,14 +83,14 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               required
-              className="rounded-lg border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white outline-none focus:border-white/35"
+              className="rounded-lg border border-[var(--line-strong)] bg-[#0b0b0e] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition-colors focus:border-[var(--accent)]"
             />
           </label>
 
           {error ? (
             <p
               role="alert"
-              className="rounded-lg border border-[#d03b3b]/40 bg-[#d03b3b]/15 px-3 py-2 text-xs text-[#e06a6a]"
+              className="rounded-lg border border-[#d03b3b]/35 bg-[#d03b3b]/10 px-3 py-2 text-[12px] text-[#e06a6a]"
             >
               {error}
             </p>
@@ -96,13 +99,13 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={pending}
-            className="mt-1 rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-neutral-900 transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="mt-1 rounded-lg bg-[var(--ink)] px-4 py-2.5 text-[13px] font-semibold text-[#08080a] transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             {pending ? "Signing in…" : "Sign in"}
           </button>
 
-          <p className="text-center text-[11px] text-neutral-600">
-            Demo credentials are pre-filled.
+          <p className="text-center text-[11px] text-[var(--ink-4)]">
+            Demo credentials are pre-filled — one click to sign in.
           </p>
         </form>
       </div>

@@ -3,21 +3,18 @@
 import type { StatBlock, Item } from "@/lib/viewspec";
 import { aggregate } from "@/lib/aggregate";
 import { applyFilters, formatValue } from "@/components/blockData";
+import { MICRO } from "@/components/theme";
 
 /**
- * One headline number and nothing else. Deliberately the emptiest block in the
- * set — whitespace is what makes it read differently from a grid or a chart.
+ * One headline number and nothing else.
+ *
+ * Deliberately the emptiest block in the set — the whitespace is what makes a
+ * "how much?" answer read differently from a grid or a chart at a glance.
  */
 const SIZE = {
   low: "text-4xl sm:text-5xl",
-  normal: "text-5xl sm:text-6xl",
-  high: "text-6xl sm:text-7xl",
-} as const;
-
-const INK = {
-  low: "text-neutral-300",
-  normal: "text-white",
-  high: "text-white",
+  normal: "text-5xl sm:text-[4rem]",
+  high: "text-6xl sm:text-[5.5rem]",
 } as const;
 
 export default function StatBlockView({
@@ -30,32 +27,41 @@ export default function StatBlockView({
   const rows = applyFilters(items, block.filters);
   const value = aggregate(rows, block.agg, block.field);
   const emphasis = block.emphasis ?? "normal";
-  // No rows is an honest answer, not a headline — render the dash recessively.
-  const ink = value === null ? "text-neutral-600" : INK[emphasis];
+  const empty = value === null;
 
   return (
-    <section className="rounded-xl border border-white/10 bg-[#1a1a19] px-7 py-10 sm:px-10 sm:py-14">
+    <section className="relative overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--panel)] px-7 py-11 sm:px-12 sm:py-16">
+      {/* a short accent rule instead of a heading rule — marks the readout */}
+      <span
+        className="absolute left-0 top-0 h-px w-24 bg-[var(--accent)]"
+        aria-hidden
+      />
+
       {block.title ? (
-        <h3 className="mb-6 text-sm font-medium text-neutral-400">{block.title}</h3>
+        <h3 className="mb-7 text-[13px] font-medium text-[var(--ink-2)]">
+          {block.title}
+        </h3>
       ) : null}
 
-      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">
-        {block.label}
-      </p>
+      <p className={MICRO}>{block.label}</p>
 
       <p
-        className={`mt-3 font-semibold leading-none ${SIZE[emphasis]} ${ink}`}
+        className={`mt-4 font-semibold leading-[0.95] tracking-[-0.03em] ${SIZE[emphasis]} ${
+          empty ? "text-[var(--ink-4)]" : "text-[var(--ink)]"
+        }`}
       >
         {formatValue(value, block.format)}
       </p>
 
-      <p className="mt-6 text-xs text-neutral-500">
-        {block.agg === "count"
-          ? `${rows.length} ${rows.length === 1 ? "row" : "rows"} counted`
-          : `${block.agg} of ${block.field} · ${rows.length} ${
-              rows.length === 1 ? "row" : "rows"
-            }`}
-      </p>
+      <div className="mt-9 border-t border-[var(--line)] pt-3">
+        <p className="text-[11px] text-[var(--ink-4)]">
+          {block.agg === "count"
+            ? `${rows.length} ${rows.length === 1 ? "row" : "rows"} counted`
+            : `${block.agg} of ${block.field} · ${rows.length} ${
+                rows.length === 1 ? "row" : "rows"
+              }`}
+        </p>
+      </div>
     </section>
   );
 }

@@ -8,7 +8,12 @@ import {
   formatDays,
   prepareRows,
 } from "@/components/blockData";
-import { STATUS_HEX, STATUS_PILL, statusForDays } from "@/components/theme";
+import {
+  BLOCK_TITLE,
+  STATUS_HEX,
+  STATUS_PILL,
+  statusForDays,
+} from "@/components/theme";
 import { useSelectItem } from "@/components/ItemSelection";
 
 /**
@@ -32,24 +37,26 @@ export default function TimelineBlockView({
   });
 
   return (
-    <section className="rounded-xl border border-white/10 bg-[#1a1a19] p-5 sm:p-6">
-      <h3 className="text-sm font-medium text-neutral-300">
-        {block.title ?? "Timeline"}
-      </h3>
+    <section className="rounded-xl border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+      <h3 className={BLOCK_TITLE}>{block.title ?? "Timeline"}</h3>
 
       {rows.length === 0 ? (
-        <p className="mt-5 rounded-lg border border-dashed border-white/10 px-5 py-8 text-center text-sm text-neutral-500">
+        <p className="mt-5 rounded-lg border border-dashed border-[var(--line-strong)] px-5 py-10 text-center text-sm text-[var(--ink-3)]">
           No dated items for this block.
         </p>
       ) : (
-        <ol className="relative mt-5 ml-2 border-l border-white/10 pl-6">
+        <ol className="relative mt-6 ml-2 border-l border-[var(--line-strong)] pl-7">
           {rows.map((item) => {
             const days = daysUntil(fieldValue(item, block.dateField));
             const status = statusForDays(days);
 
             return (
               <li key={item.id} className="relative pb-7 last:pb-0">
-              <button type="button" onClick={() => selectItem(item)} className="block w-full cursor-pointer text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-400/60">
+              <button
+                  type="button"
+                  onClick={() => selectItem(item)}
+                  className="block w-full cursor-pointer rounded-lg px-2 py-1 text-left transition-colors hover:bg-white/[0.03]"
+                >
                 <span
                   className="absolute -left-[31px] top-1.5 h-2.5 w-2.5 rounded-full ring-2 ring-[#1a1a19]"
                   style={{ background: STATUS_HEX[status] }}
@@ -57,22 +64,22 @@ export default function TimelineBlockView({
                 />
 
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <time className="font-mono text-xs uppercase tracking-wide text-neutral-400">
+                  <time className="tnum font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--ink-2)]">
                     {formatCell(item, block.dateField)}
                   </time>
                   <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_PILL[status]}`}
+                    className={`rounded-md border px-1.5 py-0.5 text-[10px] font-medium ${STATUS_PILL[status]}`}
                   >
                     {days === null ? "no date" : formatDays(days)}
                   </span>
                 </div>
 
-                <p className="mt-1.5 text-[15px] font-semibold text-white">
+                <p className="mt-2 text-[15px] font-semibold tracking-[-0.01em] text-[var(--ink)]">
                   {formatCell(item, block.primary)}
                 </p>
 
                 {block.secondary ? (
-                  <p className="mt-1 max-w-2xl text-sm leading-relaxed text-neutral-400">
+                  <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-[var(--ink-3)]">
                     {formatCell(item, block.secondary)}
                   </p>
                 ) : null}

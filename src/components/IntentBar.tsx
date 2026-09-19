@@ -34,39 +34,47 @@ export default function IntentBar({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3.5">
       <form
         onSubmit={(e) => {
           e.preventDefault();
           submit(value);
         }}
-        className="flex items-center gap-2 rounded-xl border border-white/15 bg-[#1a1a19] p-2 focus-within:border-white/35"
+        className="group flex items-center gap-2 rounded-xl border border-[var(--line-strong)] bg-[var(--panel)] p-2 transition-colors focus-within:border-[var(--accent)]"
       >
+        <span
+          className="pl-2.5 font-mono text-base text-[var(--ink-4)] transition-colors group-focus-within:text-[var(--accent)]"
+          aria-hidden
+        >
+          &gt;
+        </span>
+
         <input
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="What do you want to see?"
           aria-label="What do you want to see?"
           autoFocus
-          className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-base text-white outline-none placeholder:text-neutral-500 sm:text-lg"
+          className="min-w-0 flex-1 bg-transparent px-1 py-2.5 text-base tracking-[-0.01em] text-[var(--ink)] outline-none placeholder:text-[var(--ink-4)] focus-visible:outline-none sm:text-lg"
         />
+
         <button
           type="submit"
           disabled={isLoading || value.trim().length === 0}
-          className="shrink-0 rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-neutral-900 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="shrink-0 rounded-lg bg-[var(--ink)] px-4 py-2.5 text-[13px] font-semibold text-[#08080a] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-25"
         >
           {isLoading ? "Composing…" : "Compose"}
         </button>
       </form>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {EXAMPLES.map((example) => (
           <button
             key={example}
             type="button"
             disabled={isLoading}
             onClick={() => submit(example)}
-            className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-neutral-300 transition-colors hover:border-white/25 hover:text-white disabled:opacity-40"
+            className="rounded-lg border border-[var(--line)] bg-white/[0.02] px-2.5 py-1.5 text-[12px] text-[var(--ink-3)] transition-colors hover:border-[var(--line-strong)] hover:bg-white/[0.05] hover:text-[var(--ink)] disabled:opacity-35"
           >
             {example}
           </button>

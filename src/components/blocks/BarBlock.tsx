@@ -12,7 +12,7 @@ import {
 import type { BarBlock, Item } from "@/lib/viewspec";
 import { groupAndAggregate } from "@/lib/aggregate";
 import { applyFilters, fieldLabel, formatValue } from "@/components/blockData";
-import { VIZ } from "@/components/theme";
+import { BLOCK_TITLE, VIZ } from "@/components/theme";
 
 /**
  * Horizontal bars, ranked. Horizontal because category labels read straight
@@ -47,16 +47,16 @@ export default function BarBlockView({
     formatValue(typeof value === "number" ? value : null, block.format);
 
   return (
-    <section className="rounded-xl border border-white/10 bg-[#1a1a19] p-5">
-      <h3 className="text-sm font-medium text-neutral-300">{heading}</h3>
-      <p className="mt-0.5 text-xs text-neutral-500">
+    <section className="rounded-xl border border-[var(--line)] bg-[var(--panel)] p-5">
+      <h3 className={BLOCK_TITLE}>{heading}</h3>
+      <p className="mt-0.5 text-[11px] text-[var(--ink-4)]">
         {block.agg}
         {block.field ? ` of ${block.field}` : ""} across {points.length}{" "}
         {points.length === 1 ? "group" : "groups"}
       </p>
 
       {points.length === 0 ? (
-        <p className="mt-6 rounded-lg border border-dashed border-white/10 px-5 py-8 text-center text-sm text-neutral-500">
+        <p className="mt-6 rounded-lg border border-dashed border-[var(--line-strong)] px-5 py-10 text-center text-sm text-[var(--ink-3)]">
           Nothing to chart for this block.
         </p>
       ) : (
@@ -93,10 +93,10 @@ export default function BarBlockView({
                 }}
               />
               <Tooltip
-                cursor={{ fill: "rgba(255,255,255,0.05)" }}
+                cursor={{ fill: "rgba(255,255,255,0.04)" }}
                 formatter={fmt}
                 contentStyle={{
-                  background: "#0d0d0d",
+                  background: "#17171b",
                   border: `1px solid ${VIZ.axis}`,
                   borderRadius: 8,
                   fontSize: 12,

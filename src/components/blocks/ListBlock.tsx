@@ -2,6 +2,7 @@
 
 import type { ListBlock, Item } from "@/lib/viewspec";
 import { formatCell, prepareRows } from "@/components/blockData";
+import { BLOCK_TITLE } from "@/components/theme";
 import { useSelectItem } from "@/components/ItemSelection";
 
 /**
@@ -24,28 +25,30 @@ export default function ListBlockView({
   });
 
   return (
-    <section className="rounded-xl border border-white/10 bg-[#1a1a19] px-5 py-4">
-      <h3 className="text-sm font-medium text-neutral-300">
-        {block.title ?? "Ranked"}
-      </h3>
+    <section className="rounded-xl border border-[var(--line)] bg-[var(--panel)] px-5 py-4">
+      <h3 className={BLOCK_TITLE}>{block.title ?? "Ranked"}</h3>
 
       {rows.length === 0 ? (
-        <p className="mt-4 py-6 text-center text-sm text-neutral-500">
+        <p className="mt-4 py-8 text-center text-sm text-[var(--ink-3)]">
           Nothing matches this block.
         </p>
       ) : (
-        <ol className="mt-2 divide-y divide-white/10">
+        <ol className="mt-2 divide-y divide-[var(--line)]">
           {rows.map((item, index) => (
             <li key={item.id}>
-              <button type="button" onClick={() => selectItem(item)} className="flex w-full items-baseline gap-4 py-2.5 text-left hover:bg-white/5 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-400/60">
-              <span className="w-5 shrink-0 text-right font-mono text-xs tabular-nums text-neutral-600">
-                {index + 1}
+              <button
+                type="button"
+                onClick={() => selectItem(item)}
+                className="flex w-full items-baseline gap-4 px-1 py-2 text-left transition-colors hover:bg-white/[0.03]"
+              >
+              <span className="tnum w-6 shrink-0 text-right font-mono text-[11px] text-[var(--ink-4)]">
+                {String(index + 1).padStart(2, "0")}
               </span>
-              <span className="min-w-0 flex-1 truncate text-sm text-white">
+              <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--ink)]">
                 {formatCell(item, block.primary)}
               </span>
               {block.secondary ? (
-                <span className="shrink-0 text-xs tabular-nums text-neutral-400">
+                <span className="tnum shrink-0 font-mono text-[12px] text-[var(--ink-2)]">
                   {formatCell(item, block.secondary)}
                 </span>
               ) : null}
