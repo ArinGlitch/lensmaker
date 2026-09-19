@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import type { Item } from "@/lib/viewspec";
 import { formatMoney, formatCell } from "@/components/blockData";
 import { useSelectItem } from "@/components/ItemSelection";
+import ShowAll from "@/components/ShowAll";
 
 /**
  * The ablation. This layout is frozen: the same two boxes and the same table,
@@ -11,8 +13,11 @@ import { useSelectItem } from "@/components/ItemSelection";
  */
 export default function FixedDashboard({ items }: { items: Item[] }) {
   const selectItem = useSelectItem();
+  const [expanded, setExpanded] = useState(false);
   const total = items.reduce((sum, i) => sum + (i.amount ?? 0), 0);
-  const rows = items.slice(0, 15);
+  // Capped for the ablation contrast, but the cap must be VISIBLE — a silently
+  // truncated table reads as missing data rather than as a design choice.
+  const rows = expanded ? items : items.slice(0, 15);
 
   return (
     <section className="flex flex-col gap-4">
@@ -73,6 +78,13 @@ export default function FixedDashboard({ items }: { items: Item[] }) {
           </tbody>
         </table>
       </div>
+      <ShowAll
+        shown={rows.length}
+        total={items.length}
+        expanded={expanded}
+        onToggle={() => setExpanded((v) => !v)}
+        noun="emails"
+      />
     </section>
   );
 }
