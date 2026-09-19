@@ -103,3 +103,31 @@ import nextTs from "eslint-config-next/typescript.js";
 
 Left alone because `eslint.config.mjs` is Dev A's file and the build is green
 without it. Worth doing — it may surface real findings the first time it runs.
+
+---
+
+## 5. Intent chip appends to existing text instead of replacing it
+
+**Where:** `src/components/IntentBar.tsx` (Dev B's file — reported, not fixed)
+
+**Severity:** demo-breaking if triggered on stage.
+
+**Symptom:** Found during the joint checkpoint by driving a real browser. Click
+the chip "what am I spending most on?", then type a new question without first
+clearing the field, and the two concatenate:
+
+```
+what am I spending most on?which of my coworkers are secretly lizards?
+```
+
+The composed intent is nonsense, and on stage it looks like the app is broken.
+
+**Cause:** a chip click sets the input value but does not select or clear it, so
+subsequent typing is appended at the caret.
+
+**Suggested fix (Dev B's call):** on chip click, either clear the field before
+setting the value, or select-all so the next keystroke replaces it. Clearing the
+field after a successful submit would also prevent it.
+
+**Workaround until fixed:** select-all (⌘A) before typing a fresh intent, or
+click a chip and submit it directly without editing.
