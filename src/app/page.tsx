@@ -1,69 +1,184 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type {
+  Item,
+  SavedViewSummary,
+  ViewResponse,
+  ViewSpec,
+} from "@/lib/viewspec";
+import Renderer from "@/components/Renderer";
+import IntentBar from "@/components/IntentBar";
+import EmptyState from "@/components/EmptyState";
+import AblationToggle from "@/components/AblationToggle";
+import FixedDashboard from "@/components/FixedDashboard";
+import SpecInspector from "@/components/SpecInspector";
+import SavedViews from "@/components/SavedViews";
+
+interface DataResponse {
+  items: Item[];
+}
 
 export default function Home() {
+  const qc = useQueryClient();
+  const [generative, setGenerative] = useState(true);
+  const [intent, setIntent] = useState("");
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [view, setView] = useState<ViewResponse | null>(null);
+
+  const dataQuery = useQuery<DataResponse>({
+    queryKey: ["data"],
+    queryFn: async () => {
+      const res = await fetch("/api/data");
+      if (!res.ok) throw new Error("Failed to load data");
+      return res.json();
+    },
+  });
+
+  const viewsQuery = useQuery<{ views: SavedViewSummary[] }>({
+    queryKey: ["views"],
+    queryFn: async () => {
+      const res = await fetch("/api/views");
+      if (!res.ok) throw new Error("Failed to load saved views");
+      return res.json();
+    },
+  });
+
+  const generate = useMutation<ViewResponse, Error, string>({
+    mutationFn: async (nextIntent) => {
+      const res = await fetch("/api/view", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ intent: nextIntent }),
+      });
+      if (!res.ok) throw new Error("Failed to generate view");
+      return res.json();
+    },
+    onSuccess: (data) => setView(data),
+  });
+
+  const saveView = useMutation<unknown, Error, { intent: string; spec: ViewSpec }>({
+    mutationFn: async (payload) => {
+      const res = await fetch("/api/views", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to save view");
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["views"] }),
+  });
+
+  const deleteView = useMutation<unknown, Error, string>({
+    mutationFn: async (id) => {
+      const res = await fetch(`/api/views/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete view");
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["views"] }),
+  });
+
+  const items = dataQuery.data?.items ?? [];
+  const spec = view?.spec ?? null;
+
+  function handleSubmit(nextIntent: string) {
+    setIntent(nextIntent);
+    generate.mutate(nextIntent);
+  }
+
+  function handleLoadSaved(id: string) {
+    const found = viewsQuery.data?.views.find((v) => v.id === id);
+    if (!found) return;
+    setIntent(found.intent);
+    setView({
+      spec: found.spec,
+      source: "cache",
+      provider: "saved",
+      latencyMs: 0,
+    });
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-6 py-10">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Lensmaker</h1>
+          <p className="mt-1 text-sm text-neutral-400">
+            State what you care about. The model composes the screen.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="flex items-center gap-3">
+          <AblationToggle enabled={generative} onChange={setGenerative} />
+          {view ? (
+            <button
+              type="button"
+              onClick={() => setInspectorOpen(true)}
+              className="rounded border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-800"
+            >
+              Inspect spec
+            </button>
+          ) : null}
         </div>
-      </main>
-    </div>
+      </header>
+
+      {generative ? (
+        <>
+          <IntentBar onSubmit={handleSubmit} isLoading={generate.isPending} />
+
+          {generate.isPending ? (
+            <p className="text-sm text-neutral-500">Composing a view…</p>
+          ) : null}
+
+          {spec?.insufficient_evidence ? (
+            <EmptyState notes={spec.notes} intent={intent} />
+          ) : spec ? (
+            <section className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                  <h2 className="text-lg font-medium">{spec.title}</h2>
+                  <p className="text-xs text-neutral-500">
+                    {spec.intent_echo} · {view?.source} · {view?.provider} ·{" "}
+                    {view?.latencyMs}ms · confidence {spec.confidence}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => saveView.mutate({ intent, spec })}
+                  className="rounded border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-800"
+                >
+                  Save view
+                </button>
+              </div>
+              <Renderer spec={spec} items={items} />
+            </section>
+          ) : (
+            <p className="text-sm text-neutral-500">
+              Ask something to build a view.
+            </p>
+          )}
+        </>
+      ) : (
+        <FixedDashboard items={items} />
+      )}
+
+      <SavedViews
+        views={viewsQuery.data?.views ?? []}
+        onLoad={handleLoadSaved}
+        onDelete={(id) => deleteView.mutate(id)}
+      />
+
+      <SpecInspector
+        spec={view?.spec ?? null}
+        meta={{
+          provider: view?.provider ?? "—",
+          latencyMs: view?.latencyMs ?? 0,
+          source: view?.source ?? "—",
+        }}
+        open={inspectorOpen}
+        onClose={() => setInspectorOpen(false)}
+      />
+    </main>
   );
 }
