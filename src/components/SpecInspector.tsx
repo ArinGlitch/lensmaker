@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * The receipt. This drawer shows the exact JSON the model returned — which is
@@ -68,6 +69,9 @@ export default function SpecInspector({
   onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   const json = useMemo(() => {
     try {
@@ -92,7 +96,9 @@ export default function SpecInspector({
     return () => clearTimeout(t);
   }, [copied]);
 
-  if (!open) return null;
+  // Portalled for the same reason as ItemDrawer: the sliding page shell is a
+  // transformed ancestor, which would otherwise capture this fixed overlay.
+  if (!open || !mounted) return null;
 
   async function copy() {
     try {
@@ -103,7 +109,7 @@ export default function SpecInspector({
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex justify-end">
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-[2px]"
@@ -158,6 +164,7 @@ export default function SpecInspector({
           <Highlighted json={json} />
         </div>
       </aside>
-    </div>
+    </div>,
+    document.body,
   );
 }

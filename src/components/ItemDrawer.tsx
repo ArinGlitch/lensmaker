@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Item } from "@/lib/viewspec";
 import { formatCell } from "@/components/blockData";
 import { STATUS_PILL, statusFor } from "@/components/theme";
@@ -52,6 +53,23 @@ export default function ItemDrawer({
   onClose: () => void;
 }) {
   const [tab, setTab] = useState<"message" | "extracted">("message");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  /**
+   * Reading mode. The page shell slides left rather than being covered, so the
+   * header and the list stay readable beside the message. The flag lives on
+   * <html> so the CSS can own the motion and page.tsx needs no changes.
+   */
+  useEffect(() => {
+    const root = document.documentElement;
+    if (item) root.dataset.reading = "true";
+    else delete root.dataset.reading;
+    return () => {
+      delete root.dataset.reading;
+    };
+  }, [item]);
 
   useEffect(() => {
     if (!item) return;
@@ -63,7 +81,10 @@ export default function ItemDrawer({
     return () => window.removeEventListener("keydown", onKey);
   }, [item, onClose]);
 
-  if (!item) return null;
+  // Portalled to <body> on purpose: the shell that slides is a transformed
+  // ancestor, and a transform (or will-change) makes itself the containing
+  // block for fixed descendants — the drawer would slide along with the page.
+  if (!item || !mounted) return null;
 
   const paragraphs = (item.body || item.sourceExcerpt)
     .split(/\n\s*\n/)
@@ -80,16 +101,21 @@ export default function ItemDrawer({
     { label: "Urgency", value: item.urgency },
   ];
 
-  return (
-    <div className="fixed inset-0 z-50 flex">
+  return createPortal(
+    <>
+      {/* No scrim on a wide screen: reading mode is a real two-pane split, so
+          the list keeps its own column, stays bright, and stays clickable —
+          picking another email just swaps the message shown here. Below the
+          split breakpoint the pane covers most of the screen, so it behaves as
+          an overlay again and the scrim comes back. */}
       <button
         type="button"
         aria-label="Close message"
         onClick={onClose}
-        className="flex-1 bg-black/60"
+        className="fixed inset-0 z-40 bg-black/55 lg:hidden"
       />
 
-      <aside className="flex h-full w-full max-w-2xl flex-col border-l border-[var(--line)] bg-[#141413]">
+      <aside className="drawer-panel fixed right-0 top-0 z-50 flex h-full flex-col border-l border-[var(--line-strong)] bg-[var(--panel-raised)] shadow-[0_0_60px_rgba(0,0,0,0.45)]">
         {/* toolbar */}
         <div className="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--line)] px-5 py-3">
           <div className="flex gap-1">
@@ -229,6 +255,7 @@ export default function ItemDrawer({
           )}
         </div>
       </aside>
-    </div>
+    </>,
+    document.body,
   );
 }

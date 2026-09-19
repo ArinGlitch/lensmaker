@@ -73,3 +73,199 @@ body {
   outline-offset: 2px;
   border-radius: 6px;
 }
+
+/* ---------------------------------------------------------------------------
+ * Aurora background (see components/AuroraBackground.tsx)
+ *
+ * Fixed, behind everything, pointer-events-none. Only transform and opacity
+ * animate, so this stays on the compositor. Panels are opaque, so the aurora
+ * only ever shows through the gaps between them — text contrast is unaffected.
+ * ------------------------------------------------------------------------ */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--ground);
+  --mx: 0;
+  --my: 0;
+}
+
+.aurora-blob {
+  position: absolute;
+  display: block;
+  border-radius: 9999px;
+  will-change: transform;
+  /* the cursor lean rides on top of each blob's own drift */
+  transform: translate3d(
+    calc(var(--mx) * var(--lean, 40px)),
+    calc(var(--my) * var(--lean, 40px)),
+    0
+  );
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.aurora-blob-1 {
+  top: -20vh;
+  left: -12vw;
+  width: 64vw;
+  height: 64vw;
+  --lean: 64px;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(99, 110, 250, 0.34),
+    rgba(88, 101, 242, 0.09) 42%,
+    transparent 68%
+  );
+  animation: aurora-drift-1 17s ease-in-out infinite alternate;
+}
+
+.aurora-blob-2 {
+  top: 2vh;
+  right: -18vw;
+  width: 58vw;
+  height: 58vw;
+  --lean: -56px;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(159, 92, 246, 0.3),
+    rgba(147, 87, 235, 0.08) 44%,
+    transparent 70%
+  );
+  animation: aurora-drift-2 21s ease-in-out infinite alternate;
+}
+
+.aurora-blob-3 {
+  bottom: -32vh;
+  left: 18vw;
+  width: 62vw;
+  height: 62vw;
+  --lean: 38px;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(57, 135, 229, 0.26),
+    rgba(57, 135, 229, 0.07) 46%,
+    transparent 72%
+  );
+  animation: aurora-drift-3 19s ease-in-out infinite alternate;
+}
+
+.aurora-blob-4 {
+  top: 32vh;
+  left: 34vw;
+  width: 40vw;
+  height: 40vw;
+  --lean: -44px;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(219, 96, 186, 0.18),
+    rgba(219, 96, 186, 0.05) 46%,
+    transparent 70%
+  );
+  animation: aurora-drift-4 14s ease-in-out infinite alternate;
+}
+
+/* A soft light that tracks the pointer directly, rather than leaning toward it.
+   This is the layer that makes the background feel alive under the cursor. */
+.aurora-spot {
+  position: absolute;
+  inset: -20%;
+  display: block;
+  background: radial-gradient(
+    38vw 38vw at calc(50% + var(--mx) * 50%) calc(50% + var(--my) * 50%),
+    rgba(120, 160, 255, 0.16),
+    rgba(120, 160, 255, 0.05) 38%,
+    transparent 64%
+  );
+  transition: background 120ms linear;
+}
+
+/* the faint dot matrix that keeps the gradients from looking like a smear */
+.aurora-grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.055) 1px,
+    transparent 1px
+  );
+  background-size: 34px 34px;
+  mask-image: radial-gradient(ellipse 85% 65% at 50% 38%, #000 35%, transparent 78%);
+  animation: aurora-grid-breathe 12s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-drift-1 {
+  from { translate: 0 0; scale: 1; opacity: 0.85; }
+  to { translate: 10vw 7vh; scale: 1.18; opacity: 1; }
+}
+
+@keyframes aurora-drift-2 {
+  from { translate: 0 0; scale: 1.12; opacity: 1; }
+  to { translate: -9vw 11vh; scale: 0.9; opacity: 0.8; }
+}
+
+@keyframes aurora-drift-3 {
+  from { translate: 0 0; scale: 0.94; opacity: 0.9; }
+  to { translate: 8vw -10vh; scale: 1.14; opacity: 1; }
+}
+
+@keyframes aurora-drift-4 {
+  from { translate: 0 0; scale: 1.05; opacity: 0.55; }
+  to { translate: -11vw -6vh; scale: 0.88; opacity: 0.9; }
+}
+
+@keyframes aurora-grid-breathe {
+  from { opacity: 0.55; }
+  to { opacity: 1; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Reading mode — a real two-pane split, not an overlay.
+ *
+ * ItemDrawer sets data-reading on <html>. The shell then reserves a column on
+ * the right for the message and the list re-centres into what is left, so both
+ * panes are fully visible and the list stays clickable — picking another email
+ * just swaps the message. Closing returns the list to centre.
+ *
+ * Only above 1024px. Below that the pane is most of the screen, so it stays an
+ * overlay with a scrim and nothing here applies.
+ * ------------------------------------------------------------------------ */
+:root {
+  --pane-w: 34rem;
+}
+
+.drawer-panel {
+  width: min(var(--pane-w), 100%);
+}
+
+@media (min-width: 1024px) {
+  .page-shell {
+    transition: padding-right 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  :root[data-reading="true"] .page-shell {
+    padding-right: var(--pane-w);
+  }
+}
+
+/* the reading pane arrives from the right rather than appearing */
+.drawer-panel {
+  animation: drawer-in 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes drawer-in {
+  from { transform: translateX(28px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob,
+  .aurora-grid {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
+  .aurora-spot { transition: none; }
+  .page-shell { transition: none; }
+  .drawer-panel { animation: none; }
+}
