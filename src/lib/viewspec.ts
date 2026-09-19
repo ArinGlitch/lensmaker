@@ -182,6 +182,8 @@ export interface Item {
   isSuspicious: boolean;
   riskReason: string | null;
   sourceExcerpt: string;
+  /** Full original message text, for the detail view. */
+  body: string;
 }
 
 export interface SavedViewSummary {

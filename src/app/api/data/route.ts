@@ -24,6 +24,7 @@ export async function GET() {
     isSuspicious: r.isSuspicious,
     riskReason: r.riskReason,
     sourceExcerpt: r.sourceExcerpt,
+    body: r.body,
   }));
 
   return Response.json({ items, schemaDigest: SCHEMA_DIGEST });

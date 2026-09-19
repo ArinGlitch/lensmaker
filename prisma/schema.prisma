@@ -30,6 +30,9 @@ model Item {
   isSuspicious  Boolean   @default(false)
   riskReason    String?
   sourceExcerpt String
+  /// Full original message text, kept so the detail view can show the real
+  /// email rather than only the extracted fields.
+  body          String    @default("")
   createdAt     DateTime  @default(now())
 
   @@index([category])

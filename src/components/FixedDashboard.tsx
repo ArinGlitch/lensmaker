@@ -2,6 +2,7 @@
 
 import type { Item } from "@/lib/viewspec";
 import { formatMoney, formatCell } from "@/components/blockData";
+import { useSelectItem } from "@/components/ItemSelection";
 
 /**
  * The ablation. This layout is frozen: the same two boxes and the same table,
@@ -9,6 +10,7 @@ import { formatMoney, formatCell } from "@/components/blockData";
  * the argument. Do not improve it.
  */
 export default function FixedDashboard({ items }: { items: Item[] }) {
+  const selectItem = useSelectItem();
   const total = items.reduce((sum, i) => sum + (i.amount ?? 0), 0);
   const rows = items.slice(0, 15);
 
@@ -57,7 +59,7 @@ export default function FixedDashboard({ items }: { items: Item[] }) {
               </tr>
             ) : (
               rows.map((item) => (
-                <tr key={item.id} className="border-b border-neutral-800 last:border-0">
+                <tr key={item.id} onClick={() => selectItem(item)} className="cursor-pointer border-b border-neutral-800 last:border-0 hover:bg-white/[0.03]">
                   <td className="px-3 py-2 text-neutral-200">{item.vendor}</td>
                   <td className="max-w-[260px] truncate px-3 py-2 text-neutral-300">
                     {item.subject}

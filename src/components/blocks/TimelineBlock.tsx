@@ -9,6 +9,7 @@ import {
   prepareRows,
 } from "@/components/blockData";
 import { STATUS_HEX, STATUS_PILL, statusForDays } from "@/components/theme";
+import { useSelectItem } from "@/components/ItemSelection";
 
 /**
  * A vertical rail with dated stops. Nothing here is a box in a grid — the rail,
@@ -22,6 +23,7 @@ export default function TimelineBlockView({
   block: TimelineBlock;
   items: Item[];
 }) {
+  const selectItem = useSelectItem();
   const rows = prepareRows(items, {
     filters: block.filters,
     sortBy: block.dateField,
@@ -47,6 +49,7 @@ export default function TimelineBlockView({
 
             return (
               <li key={item.id} className="relative pb-7 last:pb-0">
+              <button type="button" onClick={() => selectItem(item)} className="block w-full cursor-pointer text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-400/60">
                 <span
                   className="absolute -left-[31px] top-1.5 h-2.5 w-2.5 rounded-full ring-2 ring-[#1a1a19]"
                   style={{ background: STATUS_HEX[status] }}
@@ -73,6 +76,7 @@ export default function TimelineBlockView({
                     {formatCell(item, block.secondary)}
                   </p>
                 ) : null}
+              </button>
               </li>
             );
           })}

@@ -15,6 +15,8 @@ import AblationToggle from "@/components/AblationToggle";
 import FixedDashboard from "@/components/FixedDashboard";
 import SpecInspector from "@/components/SpecInspector";
 import SavedViews from "@/components/SavedViews";
+import ItemDrawer from "@/components/ItemDrawer";
+import { ItemSelectionProvider } from "@/components/ItemSelection";
 
 interface DataResponse {
   items: Item[];
@@ -26,6 +28,7 @@ export default function Home() {
   const [intent, setIntent] = useState("");
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [view, setView] = useState<ViewResponse | null>(null);
+  const [selected, setSelected] = useState<Item | null>(null);
 
   const dataQuery = useQuery<DataResponse>({
     queryKey: ["data"],
@@ -151,7 +154,9 @@ export default function Home() {
                   Save view
                 </button>
               </div>
-              <Renderer spec={spec} items={items} />
+              <ItemSelectionProvider value={setSelected}>
+                <Renderer spec={spec} items={items} />
+              </ItemSelectionProvider>
             </section>
           ) : (
             <p className="text-sm text-neutral-500">
@@ -160,7 +165,9 @@ export default function Home() {
           )}
         </>
       ) : (
-        <FixedDashboard items={items} />
+        <ItemSelectionProvider value={setSelected}>
+          <FixedDashboard items={items} />
+        </ItemSelectionProvider>
       )}
 
       <SavedViews
@@ -168,6 +175,8 @@ export default function Home() {
         onLoad={handleLoadSaved}
         onDelete={(id) => deleteView.mutate(id)}
       />
+
+      <ItemDrawer item={selected} onClose={() => setSelected(null)} />
 
       <SpecInspector
         spec={view?.spec ?? null}

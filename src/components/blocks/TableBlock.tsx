@@ -3,6 +3,7 @@
 import type { TableBlock, Item } from "@/lib/viewspec";
 import { fieldLabel, formatCell, isDateField, prepareRows } from "@/components/blockData";
 import { SCHEMA_DIGEST } from "@/lib/catalog";
+import { useSelectItem } from "@/components/ItemSelection";
 
 const NUMERIC = new Set(
   SCHEMA_DIGEST.filter((f) => f.type === "number").map((f) => f.name),
@@ -23,6 +24,7 @@ export default function TableBlockView({
   block: TableBlock;
   items: Item[];
 }) {
+  const selectItem = useSelectItem();
   const rows = prepareRows(items, {
     filters: block.filters,
     sortBy: block.sortBy,
@@ -62,7 +64,8 @@ export default function TableBlockView({
               {rows.map((item) => (
                 <tr
                   key={item.id}
-                  className="border-b border-white/5 last:border-0 hover:bg-white/[0.03]"
+                  onClick={() => selectItem(item)}
+                  className="cursor-pointer border-b border-white/5 last:border-0 hover:bg-white/[0.03]"
                 >
                   {block.columns.map((col) => (
                     <td

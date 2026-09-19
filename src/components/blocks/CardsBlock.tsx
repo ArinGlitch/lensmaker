@@ -3,6 +3,7 @@
 import type { CardsBlock, Item } from "@/lib/viewspec";
 import { formatCell, prepareRows } from "@/components/blockData";
 import { STATUS_PILL, statusFor } from "@/components/theme";
+import { useSelectItem } from "@/components/ItemSelection";
 
 /**
  * A grid of boxes — used when each row matters individually. The shape (many
@@ -15,6 +16,7 @@ export default function CardsBlockView({
   block: CardsBlock;
   items: Item[];
 }) {
+  const selectItem = useSelectItem();
   const rows = prepareRows(items, {
     filters: block.filters,
     sortBy: block.sortBy,
@@ -42,9 +44,11 @@ export default function CardsBlockView({
               : null;
 
             return (
-              <article
+              <button
+                type="button"
                 key={item.id}
-                className="flex min-h-[122px] flex-col rounded-xl border border-white/10 bg-[#1a1a19] p-4 transition-colors hover:border-white/20"
+                onClick={() => selectItem(item)}
+                className="flex min-h-[122px] flex-col rounded-xl border border-white/10 bg-[#1a1a19] p-4 text-left transition-colors hover:border-white/20 focus:outline-none focus-visible:border-amber-400/60"
               >
                 <div className="flex items-start justify-between gap-3">
                   <p
@@ -72,7 +76,7 @@ export default function CardsBlockView({
                     {secondary}
                   </p>
                 ) : null}
-              </article>
+              </button>
             );
           })}
         </div>

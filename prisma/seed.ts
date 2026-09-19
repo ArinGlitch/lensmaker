@@ -30,6 +30,7 @@ interface ExtractedRow {
   isSuspicious: boolean;
   riskReason: string | null;
   sourceExcerpt: string;
+  body: string;
 }
 
 const DEMO_EMAIL = "demo@lensmaker.app";
@@ -84,6 +85,7 @@ async function main() {
       isSuspicious: r.isSuspicious,
       riskReason: r.riskReason,
       sourceExcerpt: r.sourceExcerpt,
+      body: r.body ?? "",
     })),
   });
   console.log(`[seed] inserted ${rows.length} items`);

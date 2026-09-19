@@ -2,6 +2,7 @@
 
 import type { ListBlock, Item } from "@/lib/viewspec";
 import { formatCell, prepareRows } from "@/components/blockData";
+import { useSelectItem } from "@/components/ItemSelection";
 
 /**
  * Compact ranked rows — the densest block in the set. Numbered, divided by
@@ -14,6 +15,7 @@ export default function ListBlockView({
   block: ListBlock;
   items: Item[];
 }) {
+  const selectItem = useSelectItem();
   const rows = prepareRows(items, {
     filters: block.filters,
     sortBy: block.sortBy,
@@ -34,7 +36,8 @@ export default function ListBlockView({
       ) : (
         <ol className="mt-2 divide-y divide-white/10">
           {rows.map((item, index) => (
-            <li key={item.id} className="flex items-baseline gap-4 py-2.5">
+            <li key={item.id}>
+              <button type="button" onClick={() => selectItem(item)} className="flex w-full items-baseline gap-4 py-2.5 text-left hover:bg-white/5 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-400/60">
               <span className="w-5 shrink-0 text-right font-mono text-xs tabular-nums text-neutral-600">
                 {index + 1}
               </span>
@@ -46,6 +49,7 @@ export default function ListBlockView({
                   {formatCell(item, block.secondary)}
                 </span>
               ) : null}
+            </button>
             </li>
           ))}
         </ol>
