@@ -165,6 +165,10 @@ export const BucketsBlockSchema = z.object({
   /** Day boundaries, ascending. Defaults to 2/7/14/30 when omitted. */
   edges: z.array(z.number().int().min(1).max(3650)).min(1).max(6).optional(),
   label: z.string().max(80).optional(),
+  /** Display fields for the drill-down list. Added so the block need not name
+   * `subject`/`vendor` literally — every other row-bearing block gets these. */
+  primary: z.string().max(40).optional(),
+  secondary: z.string().max(40).optional(),
 });
 
 /** Two numbers side by side: old vs new price, budget vs actual, MoM. */

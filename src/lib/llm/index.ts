@@ -5,6 +5,7 @@ import type {
   LLMProvider,
 } from "./types";
 import type { ExtractInput } from "./extract";
+import type { RefineInput } from "./refine";
 
 export type { LLMProvider, GenerateInput, GenerateResult } from "./types";
 
@@ -34,6 +35,15 @@ export function getProvider(): LLMProvider {
       }
       const { HaikuProvider } = await import("./haiku");
       return new HaikuProvider().generateViewSpec(input);
+    },
+
+    async refineViewSpec(input: RefineInput): Promise<GenerateResult> {
+      if (name === "gemini") {
+        const { GeminiProvider } = await import("./gemini");
+        return new GeminiProvider().refineViewSpec(input);
+      }
+      const { HaikuProvider } = await import("./haiku");
+      return new HaikuProvider().refineViewSpec(input);
     },
 
     async extractFields(input: ExtractInput): Promise<ExtractResult> {

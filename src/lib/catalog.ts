@@ -125,7 +125,7 @@ export const CATALOG: CatalogEntry[] = [
     use:
       "How long things have been waiting, as age bands. Use for 'what have I been " +
       "ignoring / sitting on / not responded to'.",
-    props: "dateField, edges?(day boundaries asc, default 2/7/14/30), label?",
+    props: "dateField, edges?(day boundaries asc, default 2/7/14/30), label?, primary?, secondary?",
   },
   {
     type: "comparison",
@@ -147,7 +147,7 @@ export const CATALOG: CatalogEntry[] = [
     use:
       "Grouped counts split into still-actionable vs already-expired. Use for " +
       "'what did I miss' / 'catch me up'.",
-    props: "groupBy, dateField?, primary?",
+    props: "groupBy, dateField?, primary?(defaults to subject)",
   },
   {
     type: "entity",

@@ -27,6 +27,10 @@ RULES
 - NEVER emit the same block type twice. Each block must be a DIFFERENT type.
 - Prefer a mix of shapes: one number, one chart, one item view. Visual variety matters.
 - To express "this field is set", use {field, op:"ne", value:null}.
+- COUNTDOWN EXCEPTION: never pre-filter a "countdown" block by its own dateField.
+  The block picks the soonest future date itself and falls back to showing the most
+  recent overdue one; a {gte,"now"} filter makes that fallback unreachable and the
+  block renders empty instead.
 - TIME RULE: the value "now" is a valid filter value meaning this moment.
   For intents about what is UPCOMING / due / due soon / coming up, filter
   {field:"deadlineDate", op:"gte", value:"now"} (or chargeDate) and sort dir:"asc".

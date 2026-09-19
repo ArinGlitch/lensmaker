@@ -24,6 +24,7 @@ export const config = {
     "/views",
     "/api/data",
     "/api/view",
+    "/api/view/refine",
     "/api/views",
     "/api/views/:path*",
   ],

@@ -5,6 +5,7 @@ import {
 } from "@aws-sdk/client-bedrock-runtime";
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 import { buildPrompt } from "./prompt";
+import { buildRefinePrompt, type RefineInput } from "./refine";
 import { VIEWSPEC_JSON_SCHEMA } from "./schema";
 import {
   EXTRACTION_JSON_SCHEMA,
@@ -99,5 +100,38 @@ export class HaikuProvider implements LLMProvider {
     const block = res.output?.message?.content?.find((c) => c.toolUse);
     const fields = block?.toolUse?.input ?? null;
     return { fields, raw: JSON.stringify(fields), latencyMs };
+  }
+
+  /** Same tool-forced-JSON shape as generateViewSpec; only the prompt differs. */
+  async refineViewSpec(input: RefineInput): Promise<GenerateResult> {
+    const tool: Tool = {
+      toolSpec: {
+        name: "emit_viewspec",
+        description: "Emit the updated ViewSpec for the adjusted screen.",
+        inputSchema: {
+          json: VIEWSPEC_JSON_SCHEMA as unknown as Record<string, never>,
+        },
+      },
+    };
+
+    const started = Date.now();
+    const res = await this.client.send(
+      new ConverseCommand({
+        modelId: MODEL,
+        messages: [
+          { role: "user", content: [{ text: buildRefinePrompt(input) }] },
+        ],
+        inferenceConfig: { temperature: 0.2, maxTokens: 2048 },
+        toolConfig: {
+          tools: [tool],
+          toolChoice: { tool: { name: "emit_viewspec" } },
+        },
+      }),
+    );
+    const latencyMs = Date.now() - started;
+
+    const block = res.output?.message?.content?.find((c) => c.toolUse);
+    const spec = block?.toolUse?.input ?? null;
+    return { spec, raw: JSON.stringify(spec), latencyMs };
   }
 }

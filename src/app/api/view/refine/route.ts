@@ -3,7 +3,6 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getProvider } from "@/lib/llm";
-import { buildFallbackSpec } from "@/lib/fallback";
 import { CATALOG, SCHEMA_DIGEST, SCHEMA_VERSION } from "@/lib/catalog";
 import {
   excludeSuspiciousFromMoney,
@@ -11,38 +10,27 @@ import {
 } from "@/lib/specPipeline";
 import {
   ViewSpecSchema,
-  type ViewSpec,
   type ViewSource,
+  type ViewSpec,
 } from "@/lib/viewspec";
 
+/**
+ * Incremental refinement of the spec already on screen.
+ *
+ * Runs the SAME validate -> prune -> money-guard pipeline as a fresh
+ * generation (see lib/specPipeline.ts), so an adjustment cannot smuggle past a
+ * rule a generation would have caught.
+ *
+ * Failure semantics differ from /api/view in one important way: if the model
+ * cannot produce a usable adjustment we return the CALLER'S ORIGINAL SPEC
+ * rather than the generic fallback. Losing the screen you had built up because
+ * one tweak failed would be far worse than the tweak silently not applying.
+ */
 const BodySchema = z.object({
+  instruction: z.string().min(1).max(300),
   intent: z.string().min(1).max(300),
+  spec: z.unknown(),
 });
-
-/** Field names a block references, by block type. */
-
-/**
- * Validates the envelope and each block SEPARATELY.
- *
- * Parsing the whole ViewSpec at once meant a single malformed block (e.g. a
- * stat missing `agg`) failed the entire object, threw away the good blocks
- * alongside it, and served the fallback — so every intent produced the same
- * screen. plan.md §4 rule 2 always prescribed per-block pruning for unknown
- * field names; this applies it to shape errors too.
- *
- * Returns null only when nothing survives, which is the one case that should
- * reach the fallback.
- */
-
-/**
- * Money demanded by a phishing email is not money the user spent, so it must
- * never land in a spending total. The prompt asks the model to filter it out;
- * this makes it true.
- *
- * Applies to blocks that aggregate or display `amount`, unless the intent is
- * itself about scams/security (where showing the fake figure is the point) or
- * the model already constrained isSuspicious deliberately.
- */
 
 export async function POST(req: Request) {
   const user = await getSession();
@@ -54,25 +42,40 @@ export async function POST(req: Request) {
   } catch {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
+
   const parsed = BodySchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: "intent is required" }, { status: 400 });
+    return Response.json(
+      { error: "instruction, intent and spec are required" },
+      { status: 400 },
+    );
   }
 
+  const base = ViewSpecSchema.safeParse(parsed.data.spec);
+  if (!base.success) {
+    return Response.json(
+      { error: "spec is not a valid ViewSpec" },
+      { status: 400 },
+    );
+  }
+
+  const instruction = parsed.data.instruction.trim();
   const intent = parsed.data.intent.trim();
   const provider = getProvider();
+
+  // Cache on the base spec + the instruction, so repeating a refinement during
+  // a rehearsal costs nothing.
   const key = createHash("sha256")
-    .update(`${intent}|${provider.name}|${SCHEMA_VERSION}`)
+    .update(
+      `refine|${JSON.stringify(base.data)}|${instruction}|${provider.name}|${SCHEMA_VERSION}`,
+    )
     .digest("hex");
 
-  // 1. Cache — a warm cache means the demo costs zero tokens.
   const cached = await prisma.viewSpecCache.findUnique({ where: { key } });
   if (cached) {
     const reparsed = ViewSpecSchema.safeParse(cached.spec);
     if (reparsed.success) {
       return Response.json({
-        // Re-applied on read: specs cached before this guard existed would
-        // otherwise still show scam amounts in spending totals.
         spec: excludeSuspiciousFromMoney(reparsed.data, intent),
         source: "cache" satisfies ViewSource,
         provider: provider.name,
@@ -81,7 +84,6 @@ export async function POST(req: Request) {
     }
   }
 
-  // 2. Model call. Any failure degrades to the fallback rather than a 500.
   let spec: ViewSpec | null = null;
   let source: ViewSource = "model";
   let latencyMs = 0;
@@ -89,8 +91,9 @@ export async function POST(req: Request) {
   let failureKind: "provider" | "invalid" | null = null;
 
   try {
-    const result = await provider.generateViewSpec({
-      intent,
+    const result = await provider.refineViewSpec({
+      base: base.data,
+      instruction,
       schemaDigest: SCHEMA_DIGEST,
       catalog: CATALOG,
     });
@@ -103,31 +106,29 @@ export async function POST(req: Request) {
       spec = excludeSuspiciousFromMoney(validated, intent);
       if (droppedBlocks > 0) {
         console.warn(
-          `[view] dropped ${droppedBlocks} malformed block(s); kept ${validated.blocks.length}`,
+          `[refine] dropped ${droppedBlocks} malformed block(s); kept ${validated.blocks.length}`,
         );
       }
     }
   } catch (err) {
     failureKind = "provider";
-    console.error("[view] provider error", err);
+    console.error("[refine] provider error", err);
   }
 
+  // Keep what the user had rather than collapsing to the generic fallback.
   if (!spec) {
-    spec = buildFallbackSpec(intent);
+    spec = base.data;
     source = "fallback";
-  }
-
-  // 3. Cache only real model output; fallbacks should be retried later.
-  if (source === "model") {
+  } else if (source === "model") {
     await prisma.viewSpecCache
       .create({
-        data: { key, intent, provider: provider.name, spec },
+        data: { key, intent: `${intent} :: ${instruction}`, provider: provider.name, spec },
       })
       .catch(() => undefined);
   }
 
   console.log(
-    `[view] provider=${provider.name} source=${source} latency=${latencyMs}ms blocks=${spec.blocks.length}`,
+    `[refine] provider=${provider.name} source=${source} latency=${latencyMs}ms blocks=${spec.blocks.length}`,
   );
 
   return Response.json({

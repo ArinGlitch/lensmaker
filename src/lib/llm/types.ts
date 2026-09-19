@@ -1,5 +1,6 @@
 import type { CatalogEntry, FieldInfo } from "@/lib/catalog";
 import type { ExtractInput } from "./extract";
+import type { RefineInput } from "./refine";
 
 export interface GenerateInput {
   intent: string;
@@ -27,4 +28,6 @@ export interface LLMProvider {
   generateViewSpec(input: GenerateInput): Promise<GenerateResult>;
   /** Pipeline A — model as INPUT module: prose -> structured row. */
   extractFields(input: ExtractInput): Promise<ExtractResult>;
+  /** Pipeline B, incremental: current spec + instruction -> replacement spec. */
+  refineViewSpec(input: RefineInput): Promise<GenerateResult>;
 }

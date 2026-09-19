@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { buildPrompt } from "./prompt";
+import { buildRefinePrompt, type RefineInput } from "./refine";
 import { VIEWSPEC_JSON_SCHEMA } from "./schema";
 import {
   EXTRACTION_JSON_SCHEMA,
@@ -78,5 +79,30 @@ export class GeminiProvider implements LLMProvider {
       fields = null;
     }
     return { fields, raw, latencyMs };
+  }
+
+  async refineViewSpec(input: RefineInput): Promise<GenerateResult> {
+    const started = Date.now();
+    const res = await this.ai.models.generateContent({
+      model: MODEL,
+      contents: buildRefinePrompt(input),
+      config: {
+        temperature: 0.2,
+        responseMimeType: "application/json",
+        responseSchema: VIEWSPEC_JSON_SCHEMA as unknown as object,
+        maxOutputTokens: 2048,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    });
+    const latencyMs = Date.now() - started;
+
+    const raw = res.text ?? "";
+    let spec: unknown = null;
+    try {
+      spec = JSON.parse(raw);
+    } catch {
+      spec = null;
+    }
+    return { spec, raw, latencyMs };
   }
 }
