@@ -88,10 +88,13 @@ async function runExtraction(): Promise<ExtractedRow[]> {
       const parsed = ExtractionSchema.safeParse(result.fields);
       if (!parsed.success) {
         failed += 1;
+        // Log the actual reason, not just the field name. A bare field list
+        // hid a real bug: riskReason was failing a max-length cap, so
+        // correctly-detected phishing rows were being discarded wholesale.
         console.warn(
           `  ${label} — INVALID: ${parsed.error.issues
-            .map((x) => x.path.join("."))
-            .join(", ")}`,
+            .map((x) => `${x.path.join(".") || "(root)"} ${x.message}`)
+            .join("; ")}`,
         );
         continue;
       }
