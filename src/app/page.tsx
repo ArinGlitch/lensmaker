@@ -113,7 +113,16 @@ export default function Home() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <AblationToggle enabled={generative} onChange={setGenerative} />
+          <AblationToggle
+            enabled={generative}
+            onChange={(v) => {
+              setGenerative(v);
+              // An open message belongs to the mode it was opened from, and it
+              // sits in a reserved column. Closing it on a mode switch returns
+              // the incoming screen to the centre.
+              setSelected(null);
+            }}
+          />
           {view ? (
             <button
               type="button"
