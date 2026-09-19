@@ -15,6 +15,7 @@ import AblationToggle from "@/components/AblationToggle";
 import FixedDashboard from "@/components/FixedDashboard";
 import SpecInspector from "@/components/SpecInspector";
 import SavedViews from "@/components/SavedViews";
+import FallbackNotice from "@/components/FallbackNotice";
 import ItemDrawer from "@/components/ItemDrawer";
 import { ItemSelectionProvider } from "@/components/ItemSelection";
 
@@ -163,6 +164,10 @@ export default function Home() {
                   Save view
                 </button>
               </div>
+              {view?.source === "fallback" ? (
+                <FallbackNotice provider={view.provider} />
+              ) : null}
+
               <ItemSelectionProvider value={setSelected}>
                 <Renderer spec={spec} items={items} />
               </ItemSelectionProvider>
