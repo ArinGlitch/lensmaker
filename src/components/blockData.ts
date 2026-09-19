@@ -15,21 +15,41 @@ const FIELD_TYPE = new Map(SCHEMA_DIGEST.map((f) => [f.name, f.type]));
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}(T|$)/;
 
 /**
- * Mirrors RELATIVE_DATES in lib/filters.ts. The model can use "now"/"today" as
- * a filter value to mean "from this moment", which is how an intent about
- * UPCOMING deadlines excludes the 27 already-past ones.
+ * Mirrors resolveRelativeDate in lib/filters.ts. MUST stay in step with it —
+ * the server filters Prisma rows and this filters the already-fetched array,
+ * so any divergence means the two paths disagree silently.
+ *
+ * Supports "now"/"today" with optional arithmetic: now+7d, now-30d, now+2w,
+ * now+3m.
  */
+const REL_UNIT_MS: Record<string, number> = {
+  d: 86_400_000,
+  w: 604_800_000,
+  h: 3_600_000,
+};
+
+const REL_RE = /^(now|today)\s*(?:([+-])\s*(\d{1,4})\s*([dwhm]))?$/i;
+
 function relativeDate(value: unknown): Date | null {
   if (typeof value !== "string") return null;
-  const t = value.trim().toLowerCase();
-  if (t === "now") return new Date();
-  if (t === "today") {
-    const d = new Date();
-    d.setUTCHours(0, 0, 0, 0);
-    return d;
+  const m = REL_RE.exec(value.trim());
+  if (!m) return null;
+
+  const [, base, sign, amountRaw, unitRaw] = m;
+  const d = new Date();
+  if (base.toLowerCase() === "today") d.setUTCHours(0, 0, 0, 0);
+  if (!sign || !amountRaw || !unitRaw) return d;
+
+  const amount = Number(amountRaw) * (sign === "-" ? -1 : 1);
+  const unit = unitRaw.toLowerCase();
+  if (unit === "m") {
+    const out = new Date(d);
+    out.setUTCMonth(out.getUTCMonth() + amount);
+    return out;
   }
-  return null;
+  return new Date(d.getTime() + amount * REL_UNIT_MS[unit]);
 }
+
 
 function asRecord(item: Item): Record<string, unknown> {
   return item as unknown as Record<string, unknown>;

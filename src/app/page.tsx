@@ -16,6 +16,7 @@ import FixedDashboard from "@/components/FixedDashboard";
 import SpecInspector from "@/components/SpecInspector";
 import SavedViews from "@/components/SavedViews";
 import FallbackNotice from "@/components/FallbackNotice";
+import RefineBar from "@/components/RefineBar";
 import ItemDrawer from "@/components/ItemDrawer";
 import { ItemSelectionProvider } from "@/components/ItemSelection";
 
@@ -30,6 +31,8 @@ export default function Home() {
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [view, setView] = useState<ViewResponse | null>(null);
   const [selected, setSelected] = useState<Item | null>(null);
+  /** Previous view, so one bad adjustment is always recoverable. */
+  const [previous, setPrevious] = useState<ViewResponse | null>(null);
 
   const dataQuery = useQuery<DataResponse>({
     queryKey: ["data"],
@@ -62,6 +65,23 @@ export default function Home() {
     onSuccess: (data) => setView(data),
   });
 
+  const refine = useMutation<ViewResponse, Error, string>({
+    mutationFn: async (instruction) => {
+      if (!view) throw new Error("nothing to adjust");
+      const res = await fetch("/api/view/refine", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instruction, intent, spec: view.spec }),
+      });
+      if (!res.ok) throw new Error("Failed to adjust view");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setPrevious(view);
+      setView(data);
+    },
+  });
+
   const saveView = useMutation<unknown, Error, { intent: string; spec: ViewSpec }>({
     mutationFn: async (payload) => {
       const res = await fetch("/api/views", {
@@ -89,6 +109,7 @@ export default function Home() {
 
   function handleSubmit(nextIntent: string) {
     setIntent(nextIntent);
+    setPrevious(null);
     generate.mutate(nextIntent);
   }
 
@@ -143,6 +164,9 @@ export default function Home() {
           {generate.isPending ? (
             <p className="text-sm text-neutral-500">Composing a view…</p>
           ) : null}
+          {refine.isPending ? (
+            <p className="text-sm text-neutral-500">Adjusting the view…</p>
+          ) : null}
 
           {spec?.insufficient_evidence ? (
             <EmptyState notes={spec.notes} intent={intent} />
@@ -156,13 +180,31 @@ export default function Home() {
                     {view?.latencyMs}ms · confidence {spec.confidence}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => saveView.mutate({ intent, spec })}
-                  className="rounded border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-800"
-                >
-                  Save view
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  {previous ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setView(previous);
+                        setPrevious(null);
+                      }}
+                      className="rounded border border-[var(--line-strong)] px-3 py-1.5 text-xs text-[var(--ink-2)] hover:bg-white/5"
+                    >
+                      Undo
+                    </button>
+                  ) : null}
+                  <RefineBar
+                    onRefine={(instruction) => refine.mutate(instruction)}
+                    isLoading={refine.isPending}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => saveView.mutate({ intent, spec })}
+                    className="rounded border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-800"
+                  >
+                    Save view
+                  </button>
+                </div>
               </div>
               {view?.source === "fallback" ? (
                 <FallbackNotice

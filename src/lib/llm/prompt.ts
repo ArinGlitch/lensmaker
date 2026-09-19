@@ -31,6 +31,11 @@ RULES
   The block picks the soonest future date itself and falls back to showing the most
   recent overdue one; a {gte,"now"} filter makes that fallback unreachable and the
   block renders empty instead.
+- TIME VOCABULARY: valid relative filter values are "now", "today", and
+  arithmetic on them: "now+7d", "now-30d", "now+2w", "now+3m" (d=days, w=weeks,
+  h=hours, m=months). Use these for windows: "this week" is
+  {gte,"now"} AND {lt,"now+7d"}. Nothing else is supported — any other string
+  is treated as a literal and will match nothing.
 - TIME RULE: the value "now" is a valid filter value meaning this moment.
   For intents about what is UPCOMING / due / due soon / coming up, filter
   {field:"deadlineDate", op:"gte", value:"now"} (or chargeDate) and sort dir:"asc".
@@ -45,6 +50,10 @@ RULES
   The ONLY exception is an intent explicitly about scams or security.
 - filters use only {field, op, value} with op in eq|ne|lt|lte|gt|gte|contains|in.
 - Every block needs a short unique "id".
+- ROW CONTENT RULE: for primary/secondary on any row-bearing block, pick fields a
+  human can READ — subject, vendor, summary. NEVER use urgency, category or
+  isSuspicious as primary/secondary: they are one-word labels, so a row renders as
+  "high / deadline" and tells the reader nothing. Those belong in a badge or a filter.
 - "badge" fields render as a small pill: use ONLY short values (urgency, category, currency). NEVER summary, subject or riskReason — those are prose and will break the layout.
 - To show prose, use it as "secondary" or use a callout, never a badge.
 - Set insufficient_evidence=true ONLY if the fields above genuinely cannot answer the intent. Then return a single callout explaining what's missing. Never invent data.

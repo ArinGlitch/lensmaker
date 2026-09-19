@@ -16,19 +16,44 @@ export class DisallowedFieldError extends Error {
  * only `deadlineDate ne null`, and with 27 of 36 deadlines already past, an
  * ascending timeline showed items 176 days overdue instead of what is coming up.
  */
-const RELATIVE_DATES: Record<string, () => Date> = {
-  now: () => new Date(),
-  today: () => {
-    const d = new Date();
-    d.setUTCHours(0, 0, 0, 0);
-    return d;
-  },
+/**
+ * Relative date tokens the model may use as a filter value.
+ *
+ * Supports "now"/"today" plus arithmetic: "now+7d", "now-30d", "now+2w",
+ * "now+3m". The model invented "now+7d" on its own for a "this week" intent —
+ * without arithmetic it parsed as a literal string, every comparison failed,
+ * and every block on the screen rendered empty. Offsets are the natural way to
+ * say "within the next N days", so the vocabulary has to include them.
+ */
+const UNIT_MS: Record<string, number> = {
+  d: 86_400_000,
+  w: 604_800_000,
+  h: 3_600_000,
 };
+
+const RELATIVE_RE = /^(now|today)\s*(?:([+-])\s*(\d{1,4})\s*([dwhm]))?$/i;
 
 export function resolveRelativeDate(value: unknown): Date | null {
   if (typeof value !== "string") return null;
-  const f = RELATIVE_DATES[value.trim().toLowerCase()];
-  return f ? f() : null;
+  const m = RELATIVE_RE.exec(value.trim());
+  if (!m) return null;
+
+  const [, base, sign, amountRaw, unitRaw] = m;
+  const d = new Date();
+  if (base.toLowerCase() === "today") d.setUTCHours(0, 0, 0, 0);
+  if (!sign || !amountRaw || !unitRaw) return d;
+
+  const amount = Number(amountRaw) * (sign === "-" ? -1 : 1);
+  const unit = unitRaw.toLowerCase();
+
+  // Months shift the calendar field rather than adding 30 days, so "now+1m"
+  // lands on the same day of the next month.
+  if (unit === "m") {
+    const out = new Date(d);
+    out.setUTCMonth(out.getUTCMonth() + amount);
+    return out;
+  }
+  return new Date(d.getTime() + amount * UNIT_MS[unit]);
 }
 
 function coerce(field: string, value: unknown): unknown {

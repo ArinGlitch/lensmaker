@@ -7,6 +7,8 @@
 import {
   ALLOWED_FIELDS,
   BADGE_SAFE_FIELDS,
+  LABEL_ONLY_FIELDS,
+  READABLE_FIELDS,
 } from "@/lib/catalog";
 import {
   BlockSchema,
@@ -114,6 +116,29 @@ export function validateAndPrune(raw: unknown): {
       dropped += 1;
       continue;
     }
+    // A row whose primary is a one-word label ("high", "deadline") is unreadable.
+    // Promote it to the first readable field not already in use.
+    if ("primary" in b && typeof b.primary === "string" && LABEL_ONLY_FIELDS.has(b.primary)) {
+      const taken = new Set(
+        [
+          "secondary" in b ? (b.secondary as string | undefined) : undefined,
+        ].filter(Boolean) as string[],
+      );
+      const swap = READABLE_FIELDS.find((f) => !taken.has(f)) ?? "subject";
+      console.warn(`[spec] primary "${b.primary}" is a label; using "${swap}"`);
+      (b as { primary: string }).primary = swap;
+    }
+    if (
+      "secondary" in b &&
+      typeof b.secondary === "string" &&
+      LABEL_ONLY_FIELDS.has(b.secondary)
+    ) {
+      const primary = "primary" in b ? (b.primary as string | undefined) : undefined;
+      const swap = READABLE_FIELDS.find((f) => f !== primary);
+      console.warn(`[spec] secondary "${b.secondary}" is a label; using "${swap}"`);
+      (b as { secondary?: string }).secondary = swap;
+    }
+
     // A badge renders as a small pill. The model sometimes picks a prose field
     // (riskReason, summary) which overflows the card grid off-screen. Strip the
     // badge rather than dropping an otherwise-good block.

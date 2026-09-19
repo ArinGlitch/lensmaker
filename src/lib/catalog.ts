@@ -48,6 +48,21 @@ export const ALLOWED_FIELDS: ReadonlySet<string> = new Set(
  * server-side rather than trusted. Enforced in /api/view — the prompt asks
  * nicely, this makes it true.
  */
+/**
+ * Fields that are one-word LABELS, not readable content. Using one as a row's
+ * primary/secondary renders a row as "high / deadline", which tells the reader
+ * nothing. Swapped for a readable field server-side.
+ */
+export const LABEL_ONLY_FIELDS: ReadonlySet<string> = new Set([
+  "urgency",
+  "category",
+  "isSuspicious",
+  "currency",
+]);
+
+/** Preference order when replacing a label-only display field. */
+export const READABLE_FIELDS = ["subject", "summary", "vendor"] as const;
+
 export const BADGE_SAFE_FIELDS: ReadonlySet<string> = new Set([
   "urgency",
   "category",
