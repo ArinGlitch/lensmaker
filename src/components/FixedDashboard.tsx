@@ -68,10 +68,10 @@ export default function FixedDashboard({ items }: { items: Item[] }) {
             </span>
           </span>
           <span className="mt-1 block text-2xl font-semibold text-neutral-100">
-            {formatMoney(monthTotal)}
+            {formatMoney(yearTotal)}
           </span>
           <span className="mt-1 block text-xs text-neutral-400">
-            this month · {formatMoney(yearTotal)} this year
+            this year · {formatMoney(monthTotal)} this month
           </span>
         </button>
       </div>

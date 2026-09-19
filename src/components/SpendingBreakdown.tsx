@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Item } from "@/lib/viewspec";
-import { formatMoney } from "@/components/blockData";
+import { formatCell, formatMoney } from "@/components/blockData";
 import { MICRO } from "@/components/theme";
+import { useSelectItem } from "@/components/ItemSelection";
 
 /**
  * Month-by-month spending, from the first recorded email to the last.
@@ -27,6 +28,8 @@ export interface MonthBucket {
   label: string;
   total: number;
   count: number;
+  /** The emails behind the figure, largest first. */
+  items: Item[];
 }
 
 /**
@@ -34,7 +37,7 @@ export interface MonthBucket {
  * a gap is information, and skipping it would misrepresent the trend.
  */
 export function monthlyBreakdown(items: Item[]): MonthBucket[] {
-  const byKey = new Map<string, { total: number; count: number }>();
+  const byKey = new Map<string, { total: number; count: number; items: Item[] }>();
   let min: Date | null = null;
   let max: Date | null = null;
 
@@ -45,9 +48,10 @@ export function monthlyBreakdown(items: Item[]): MonthBucket[] {
     if (!max || d > max) max = d;
     if (item.amount === null) continue;
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const bucket = byKey.get(key) ?? { total: 0, count: 0 };
+    const bucket = byKey.get(key) ?? { total: 0, count: 0, items: [] };
     bucket.total += item.amount;
     bucket.count += 1;
+    bucket.items.push(item);
     byKey.set(key, bucket);
   }
 
@@ -58,12 +62,13 @@ export function monthlyBreakdown(items: Item[]): MonthBucket[] {
   const end = new Date(max.getFullYear(), max.getMonth(), 1);
   while (cursor <= end) {
     const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`;
-    const bucket = byKey.get(key) ?? { total: 0, count: 0 };
+    const bucket = byKey.get(key) ?? { total: 0, count: 0, items: [] };
     out.push({
       key,
       label: cursor.toLocaleString(undefined, { month: "long", year: "numeric" }),
       total: bucket.total,
       count: bucket.count,
+      items: [...bucket.items].sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0)),
     });
     cursor.setMonth(cursor.getMonth() + 1);
   }
@@ -80,7 +85,18 @@ export default function SpendingBreakdown({
   onClose: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
+  const [openMonths, setOpenMonths] = useState<Set<string>>(new Set());
+  const selectItem = useSelectItem();
   useEffect(() => setMounted(true), []);
+
+  function toggleMonth(key: string) {
+    setOpenMonths((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -132,36 +148,87 @@ export default function SpendingBreakdown({
           </p>
         ) : (
           <ul className="overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--panel)]">
-            {months.map((m) => (
-              <li
-                key={m.key}
-                className="border-b border-[var(--line)] px-5 py-3.5 last:border-0"
-              >
-                <div className="flex items-baseline justify-between gap-4">
-                  <span className="text-[13px] text-[var(--ink-2)]">
-                    {m.label}
-                  </span>
-                  <span className="tnum text-[14px] font-medium text-[var(--ink)]">
-                    {m.total === 0 ? "—" : formatMoney(m.total)}
-                  </span>
-                </div>
+            {months.map((m) => {
+              const isOpen = openMonths.has(m.key);
+              return (
+                <li key={m.key} className="border-b border-[var(--line)] last:border-0">
+                  <button
+                    type="button"
+                    onClick={() => m.count > 0 && toggleMonth(m.key)}
+                    aria-expanded={isOpen}
+                    disabled={m.count === 0}
+                    className="w-full px-5 py-3.5 text-left transition-colors enabled:hover:bg-white/[0.03] disabled:cursor-default"
+                  >
+                    <span className="flex items-baseline justify-between gap-4">
+                      <span className="flex items-baseline gap-2">
+                        <span
+                          className={`text-[10px] text-[var(--ink-4)] transition-transform ${
+                            isOpen ? "rotate-90" : ""
+                          } ${m.count === 0 ? "opacity-0" : ""}`}
+                          aria-hidden
+                        >
+                          ▸
+                        </span>
+                        <span className="text-[13px] text-[var(--ink-2)]">
+                          {m.label}
+                        </span>
+                      </span>
+                      <span className="tnum text-[14px] font-medium text-[var(--ink)]">
+                        {m.total === 0 ? "—" : formatMoney(m.total)}
+                      </span>
+                    </span>
 
-                {/* proportional bar: the shape of the year at a glance */}
-                <div className="mt-2 flex items-center gap-3">
-                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
-                    <div
-                      className="h-full rounded-full bg-[var(--accent)]"
-                      style={{
-                        width: peak > 0 ? `${(m.total / peak) * 100}%` : "0%",
-                      }}
-                    />
-                  </div>
-                  <span className="tnum w-20 shrink-0 text-right text-[11px] text-[var(--ink-4)]">
-                    {m.count} {m.count === 1 ? "charge" : "charges"}
-                  </span>
-                </div>
-              </li>
-            ))}
+                    {/* proportional bar: the shape of the year at a glance */}
+                    <span className="mt-2 flex items-center gap-3">
+                      <span className="h-1 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+                        <span
+                          className="block h-full rounded-full bg-[var(--accent)]"
+                          style={{
+                            width: peak > 0 ? `${(m.total / peak) * 100}%` : "0%",
+                          }}
+                        />
+                      </span>
+                      <span className="tnum w-20 shrink-0 text-right text-[11px] text-[var(--ink-4)]">
+                        {m.count} {m.count === 1 ? "charge" : "charges"}
+                      </span>
+                    </span>
+                  </button>
+
+                  {isOpen ? (
+                    <ul className="border-t border-[var(--line)] bg-black/20">
+                      {m.items.map((item) => (
+                        <li key={item.id}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // hand off to the reading pane behind this overlay
+                              selectItem(item);
+                              onClose();
+                            }}
+                            className="flex w-full items-baseline gap-3 px-5 py-2.5 pl-11 text-left transition-colors hover:bg-white/[0.03]"
+                          >
+                            <span className="w-28 shrink-0 truncate text-[12px] text-[var(--ink-2)]">
+                              {item.vendor}
+                            </span>
+                            <span className="min-w-0 flex-1 truncate text-[12px] text-[var(--ink-3)]">
+                              {item.subject}
+                            </span>
+                            <span className="tnum shrink-0 text-[11px] text-[var(--ink-4)]">
+                              {formatCell(item, item.chargeDate ? "chargeDate" : "receivedAt")}
+                            </span>
+                            <span className="tnum w-24 shrink-0 text-right text-[12px] text-[var(--ink)]">
+                              {item.amount === null
+                                ? "—"
+                                : formatMoney(item.amount, item.currency)}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
