@@ -19,26 +19,26 @@ function Highlighted({ json }: { json: string }) {
       if (start > last) out.push(json.slice(last, start));
       if (m[1] !== undefined) {
         out.push(
-          <span key={key++} className="text-[#c3c2b7]">
+          <span key={key++} className="text-[var(--ink-2)]">
             {m[1]}
           </span>,
           ":",
         );
       } else if (m[2] !== undefined) {
         out.push(
-          <span key={key++} className="text-[#3987e5]">
+          <span key={key++} className="text-[#6ba7ee]">
             {m[2]}
           </span>,
         );
       } else if (m[3] !== undefined) {
         out.push(
-          <span key={key++} className="text-[#d95926]">
+          <span key={key++} className="text-[#ec835a]">
             {m[3]}
           </span>,
         );
       } else {
         out.push(
-          <span key={key++} className="text-[#9085e9]">
+          <span key={key++} className="text-[#a79cf0]">
             {m[4]}
           </span>,
         );
@@ -50,7 +50,7 @@ function Highlighted({ json }: { json: string }) {
   }, [json]);
 
   return (
-    <pre className="whitespace-pre-wrap break-words font-mono text-[12px] leading-relaxed text-neutral-400">
+    <pre className="whitespace-pre-wrap break-words font-mono text-[12px] leading-relaxed text-[var(--ink-3)]">
       {parts}
     </pre>
   );
@@ -106,7 +106,7 @@ export default function SpecInspector({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div
-        className="absolute inset-0 bg-black/60"
+        className="absolute inset-0 bg-black/70 backdrop-blur-[2px]"
         onClick={onClose}
         aria-hidden
       />
@@ -114,14 +114,14 @@ export default function SpecInspector({
       <aside
         role="dialog"
         aria-label="Generated ViewSpec"
-        className="relative flex h-full w-full max-w-lg flex-col border-l border-white/10 bg-[#0d0d0d] shadow-2xl"
+        className="relative flex h-full w-full max-w-lg flex-col border-l border-[var(--line-strong)] bg-[var(--panel)] shadow-2xl"
       >
-        <header className="flex items-start justify-between gap-4 border-b border-white/10 px-5 py-4">
+        <header className="flex items-start justify-between gap-4 border-b border-[var(--line)] px-5 py-4">
           <div>
-            <h2 className="text-sm font-semibold text-white">
+            <h2 className="text-[14px] font-semibold tracking-[-0.01em] text-[var(--ink)]">
               ViewSpec returned by the model
             </h2>
-            <p className="mt-1 text-xs text-neutral-500">
+            <p className="mt-1 text-[12px] text-[var(--ink-4)]">
               No JSX, no SQL, no component code — only this object.
             </p>
           </div>
@@ -129,26 +129,26 @@ export default function SpecInspector({
             type="button"
             onClick={onClose}
             aria-label="Close inspector"
-            className="shrink-0 rounded border border-white/10 px-2 py-1 text-xs text-neutral-400 hover:text-white"
+            className="shrink-0 rounded-md border border-[var(--line-strong)] px-2 py-1 font-mono text-[11px] text-[var(--ink-3)] transition-colors hover:text-[var(--ink)]"
           >
             Esc
           </button>
         </header>
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-white/10 px-5 py-3 text-[11px]">
-          <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-neutral-300">
+        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--line)] px-5 py-3 text-[11px]">
+          <span className="rounded-md border border-[var(--line)] bg-white/[0.03] px-2 py-0.5 font-mono text-[var(--ink-2)]">
             source: {meta.source}
           </span>
-          <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-neutral-300">
-            provider: {meta.provider}
+          <span className="rounded-md border border-[var(--line)] bg-white/[0.03] px-2 py-0.5 font-mono text-[var(--ink-2)]">
+            {meta.provider}
           </span>
-          <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-neutral-300 tabular-nums">
+          <span className="tnum rounded-md border border-[var(--line)] bg-white/[0.03] px-2 py-0.5 font-mono text-[var(--ink-2)]">
             {meta.latencyMs}ms
           </span>
           <button
             type="button"
             onClick={copy}
-            className="ml-auto rounded border border-white/15 px-2.5 py-1 text-neutral-300 hover:border-white/30 hover:text-white"
+            className="ml-auto rounded-md border border-[var(--line-strong)] px-2.5 py-1 text-[var(--ink-2)] transition-colors hover:border-[var(--ink-4)] hover:text-[var(--ink)]"
           >
             {copied ? "Copied" : "Copy JSON"}
           </button>

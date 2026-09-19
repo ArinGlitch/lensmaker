@@ -14,6 +14,7 @@ throwaway harness and screenshotting them in headless Chrome, not by reading cod
 | 6 | `npm run db:seed` cannot see `DATABASE_URL` | blocks first run | **Open** — Dev A's file |
 | 7 | Gemini provider dies on a missing peer dependency | blocks the demo provider | **Fixed** |
 | 8 | One malformed block sinks the whole spec → every intent falls back | **demo-breaking** | **Open** — Dev A's files |
+| 9 | Gemini runs with thinking enabled, against `plan.md` §8 | latency | **Open** — Dev A's file |
 
 ---
 
@@ -265,3 +266,36 @@ pipeline safe on its own, so do it *as well as* fix 1, not instead.
 valid 200 with `source:"fallback"` is indistinguishable from success unless you
 read `source` or the server log. Same root cause as #7. It may be worth logging
 the Zod error and the offending block id when a spec is rejected.
+
+
+---
+
+## 9. Gemini runs with thinking enabled, against `plan.md` §8
+
+**Where:** `src/lib/llm/gemini.ts` — **not fixed, Dev A's file.**
+
+**Severity:** latency only. Nothing renders wrong; the screen just takes longer
+to appear than it needs to, which matters on stage.
+
+**Symptom:** every Gemini call returns thinking parts alongside the JSON. The
+SDK says so out loud:
+
+```
+there are non-text parts thoughtSignature in the response, returning
+concatenation of all text parts.
+```
+
+Observed latencies through `/api/view` were 1.7–2.8s for a layout decision.
+
+**Cause:** `plan.md` §8 specifies `thinkingBudget: 0` on Flash — "layout choice
+needs no deep reasoning". The provider config sets `temperature`,
+`responseMimeType`, `responseSchema` and `maxOutputTokens`, but never
+`thinkingBudget`, so the model reasons before answering on every request.
+
+**Suggested fix:** add the thinking config alongside the other generation
+settings in `GeminiProvider.generateViewSpec`. Worth measuring before and after
+rather than assuming — if it does not move the numbers, the latency is
+elsewhere and this entry can be closed as a non-issue.
+
+**Note:** picking which block types answer a question is close to the case
+`thinkingBudget: 0` exists for. It is a cheap thing to try before the demo.

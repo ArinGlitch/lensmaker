@@ -17,15 +17,15 @@ export default function AblationToggle({
       role="switch"
       aria-checked={enabled}
       onClick={() => onChange(!enabled)}
-      className="flex items-center gap-2.5 rounded-full border border-white/15 bg-[#1a1a19] py-1.5 pl-3 pr-3.5 text-xs text-neutral-300 transition-colors hover:border-white/30"
+      className="flex items-center gap-2.5 rounded-lg border border-[var(--line-strong)] bg-[var(--panel)] py-1.5 pl-3 pr-3 text-xs transition-colors hover:border-[var(--ink-4)]"
     >
-      <span className="font-medium uppercase tracking-wide text-neutral-500">
+      <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--ink-4)]">
         Generative UI
       </span>
 
       <span
         className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
-          enabled ? "bg-[#3987e5]" : "bg-neutral-700"
+          enabled ? "bg-[var(--accent)]" : "bg-[#2a2a31]"
         }`}
         aria-hidden
       >
@@ -37,7 +37,9 @@ export default function AblationToggle({
       </span>
 
       <span
-        className={`w-7 font-semibold ${enabled ? "text-white" : "text-neutral-500"}`}
+        className={`w-7 text-[11px] font-semibold tracking-wide ${
+          enabled ? "text-[var(--ink)]" : "text-[var(--ink-4)]"
+        }`}
       >
         {enabled ? "ON" : "OFF"}
       </span>

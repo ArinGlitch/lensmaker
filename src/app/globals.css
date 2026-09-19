@@ -1,18 +1,50 @@
 @import "tailwindcss";
 
 /*
- * The app is dark by commitment, not by preference: layout.tsx sets the page
- * plane and every block is colour-stepped for a dark surface.
+ * Design tokens. Owned by Dev B.
  *
- * The stock scaffold flipped these on prefers-color-scheme, and because this
- * `body` rule is unlayered it beats Tailwind's `bg-neutral-950` utility — so on
- * a light-mode machine the plane went white and the header text with it. Fixed
- * values instead, and no font-family override so Tailwind's system sans wins.
+ * The app is dark by commitment, not by preference. The stock scaffold flipped
+ * these on prefers-color-scheme, and because this `body` rule is unlayered it
+ * beats Tailwind's `bg-neutral-950` utility — so on a light-mode machine the
+ * plane went white and the header text with it (bugs.MD #2). Fixed values only.
+ *
+ * Components reference these inline as bg-[var(--panel)] etc. rather than
+ * through a Tailwind theme extension, per CLAUDE.md's "no config theming".
+ *
+ * Every colour below clears 3:1 against --panel (checked, not eyeballed).
  */
 :root {
   color-scheme: dark;
-  --background: #0a0a0a;
-  --foreground: #ededed;
+
+  /* two surface levels and the ground they sit on */
+  --ground: #08080a;
+  --panel: #101013;
+  --panel-raised: #17171b;
+
+  /* hairlines do the separating; shadows are not load-bearing */
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.14);
+
+  /* four ink levels, so hierarchy never depends on size alone */
+  --ink: #f4f4f5;
+  --ink-2: #a1a1aa;
+  --ink-3: #71717a;
+  --ink-4: #52525b;
+
+  /* one accent. also the single-series chart hue. */
+  --accent: #3987e5;
+  --accent-dim: #256abf;
+
+  /* status is reserved: it means state, never decoration, and never alone */
+  --good: #0ca30c;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  --critical-ink: #e06a6a;
+
+  /* legacy aliases kept so anything still reading them keeps working */
+  --background: var(--ground);
+  --foreground: var(--ink);
 }
 
 @theme inline {
@@ -21,6 +53,23 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--ground);
+  color: var(--ink);
+}
+
+/* Data reads as data: numerals align and never reflow between renders. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * One shared focus treatment for controls that have no focus styling of their
+ * own. Inputs are excluded on purpose: every input in this app already signals
+ * focus through its own (or its container's) border, and stacking a ring on top
+ * of that renders as a double outline.
+ */
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
 }

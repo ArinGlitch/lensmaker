@@ -2,12 +2,16 @@
 
 import type { CardsBlock, Item } from "@/lib/viewspec";
 import { formatCell, prepareRows } from "@/components/blockData";
-import { STATUS_PILL, statusFor } from "@/components/theme";
+import { BLOCK_TITLE, STATUS_PILL, statusFor } from "@/components/theme";
 import { useSelectItem } from "@/components/ItemSelection";
 
 /**
- * A grid of boxes — used when each row matters individually. The shape (many
- * small panels) is the contrast against Stat's single number and Timeline's rail.
+ * A grid of panels — used when each row matters individually. Many small boxes
+ * is the silhouette that sets this apart from Stat's single number and
+ * Timeline's single column.
+ *
+ * Each card opens the original email (Dev A's reading pane), so the whole card
+ * is the hit target rather than a link buried inside it.
  */
 export default function CardsBlockView({
   block,
@@ -27,11 +31,11 @@ export default function CardsBlockView({
   return (
     <section>
       {block.title ? (
-        <h3 className="mb-3 text-sm font-medium text-neutral-300">{block.title}</h3>
+        <h3 className={`mb-3 ${BLOCK_TITLE}`}>{block.title}</h3>
       ) : null}
 
       {rows.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-white/10 bg-[#1a1a19] px-5 py-8 text-center text-sm text-neutral-500">
+        <p className="rounded-xl border border-dashed border-[var(--line-strong)] bg-[var(--panel)] px-5 py-10 text-center text-sm text-[var(--ink-3)]">
           Nothing matches this block.
         </p>
       ) : (
@@ -48,18 +52,18 @@ export default function CardsBlockView({
                 type="button"
                 key={item.id}
                 onClick={() => selectItem(item)}
-                className="flex min-h-[122px] flex-col rounded-xl border border-white/10 bg-[#1a1a19] p-4 text-left transition-colors hover:border-white/20 focus:outline-none focus-visible:border-amber-400/60"
+                className="flex min-h-[128px] flex-col rounded-xl border border-[var(--line)] bg-[var(--panel)] p-4 text-left transition-colors hover:border-[var(--line-strong)] hover:bg-[var(--panel-raised)]"
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex w-full items-start justify-between gap-3">
                   <p
-                    className="truncate text-[15px] font-semibold text-white"
+                    className="truncate text-[15px] font-semibold tracking-[-0.01em] text-[var(--ink)]"
                     title={primary}
                   >
                     {primary}
                   </p>
                   {badge && badge !== "—" ? (
                     <span
-                      className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
+                      className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
                         STATUS_PILL[statusFor(badge)]
                       }`}
                     >
@@ -70,7 +74,7 @@ export default function CardsBlockView({
 
                 {secondary ? (
                   <p
-                    className="mt-2 line-clamp-3 text-sm leading-relaxed text-neutral-400"
+                    className="mt-2.5 line-clamp-3 text-[13px] leading-relaxed text-[var(--ink-3)]"
                     title={secondary}
                   >
                     {secondary}
