@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
+
 import type { TimelineBlock, Item } from "@/lib/viewspec";
 import {
+  applyFilters,
   daysUntil,
   fieldValue,
   formatCell,
@@ -15,6 +18,7 @@ import {
   statusForDays,
 } from "@/components/theme";
 import { useSelectItem } from "@/components/ItemSelection";
+import ShowAll from "@/components/ShowAll";
 
 /**
  * A vertical rail with dated stops. Nothing here is a box in a grid — the rail,
@@ -29,11 +33,13 @@ export default function TimelineBlockView({
   items: Item[];
 }) {
   const selectItem = useSelectItem();
+  const [expanded, setExpanded] = useState(false);
+  const total = applyFilters(items, block.filters).length;
   const rows = prepareRows(items, {
     filters: block.filters,
     sortBy: block.dateField,
     dir: block.dir ?? "asc",
-    limit: block.limit ?? 12,
+    limit: expanded ? undefined : block.limit ?? 12,
   });
 
   return (
@@ -89,6 +95,13 @@ export default function TimelineBlockView({
           })}
         </ol>
       )}
+      <ShowAll
+        shown={rows.length}
+        total={total}
+        expanded={expanded}
+        onToggle={() => setExpanded((v) => !v)}
+        noun="events"
+      />
     </section>
   );
 }

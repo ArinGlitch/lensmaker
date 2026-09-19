@@ -30,8 +30,14 @@ RULES
 - Lead with a "stat" only when a single headline number is the point.
 - Use "timeline" for date/deadline intents, "bar" for comparisons, "cards" when individual items matter.
 - Use "callout" for risk/warning intents.
+- MONEY RULE: for any spending/charge/cost/total intent, ALWAYS add the filter
+  {field:"isSuspicious", op:"eq", value:false}. An amount demanded by a phishing
+  email is not money the user spent, and including it corrupts the total.
+  The ONLY exception is an intent explicitly about scams or security.
 - filters use only {field, op, value} with op in eq|ne|lt|lte|gt|gte|contains|in.
 - Every block needs a short unique "id".
+- "badge" fields render as a small pill: use ONLY short values (urgency, category, currency). NEVER summary, subject or riskReason — those are prose and will break the layout.
+- To show prose, use it as "secondary" or use a callout, never a badge.
 - Set insufficient_evidence=true ONLY if the fields above genuinely cannot answer the intent. Then return a single callout explaining what's missing. Never invent data.
 - intent_echo restates the intent you answered, in your own words.
 

@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
+
 import type { CardsBlock, Item } from "@/lib/viewspec";
-import { formatCell, prepareRows } from "@/components/blockData";
+import { formatCell, prepareRows, applyFilters } from "@/components/blockData";
 import { BLOCK_TITLE, STATUS_PILL, statusFor } from "@/components/theme";
 import { useSelectItem } from "@/components/ItemSelection";
+import ShowAll from "@/components/ShowAll";
 
 /**
  * A grid of panels — used when each row matters individually. Many small boxes
@@ -21,11 +24,13 @@ export default function CardsBlockView({
   items: Item[];
 }) {
   const selectItem = useSelectItem();
+  const [expanded, setExpanded] = useState(false);
+  const total = applyFilters(items, block.filters).length;
   const rows = prepareRows(items, {
     filters: block.filters,
     sortBy: block.sortBy,
     dir: block.dir,
-    limit: block.limit ?? 9,
+    limit: expanded ? undefined : block.limit ?? 9,
   });
 
   return (
@@ -63,7 +68,11 @@ export default function CardsBlockView({
                   </p>
                   {badge && badge !== "—" ? (
                     <span
-                      className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
+                      // max-w + truncate, NOT shrink-0: a badge holding an
+                      // unexpectedly long value used to push the card wider
+                      // than the grid and overflow the page horizontally.
+                      title={badge}
+                      className={`max-w-[9rem] shrink truncate whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
                         STATUS_PILL[statusFor(badge)]
                       }`}
                     >
@@ -85,6 +94,13 @@ export default function CardsBlockView({
           })}
         </div>
       )}
+      <ShowAll
+        shown={rows.length}
+        total={total}
+        expanded={expanded}
+        onToggle={() => setExpanded((v) => !v)}
+        noun="cards"
+      />
     </section>
   );
 }

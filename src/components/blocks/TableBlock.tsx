@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
+
 import type { TableBlock, Item } from "@/lib/viewspec";
-import { fieldLabel, formatCell, isDateField, prepareRows } from "@/components/blockData";
+import { fieldLabel, formatCell, isDateField, prepareRows, applyFilters } from "@/components/blockData";
 import { SCHEMA_DIGEST } from "@/lib/catalog";
 import { BLOCK_TITLE, MICRO } from "@/components/theme";
 import { useSelectItem } from "@/components/ItemSelection";
+import ShowAll from "@/components/ShowAll";
 
 const NUMERIC = new Set(
   SCHEMA_DIGEST.filter((f) => f.type === "number").map((f) => f.name),
@@ -26,11 +29,13 @@ export default function TableBlockView({
   items: Item[];
 }) {
   const selectItem = useSelectItem();
+  const [expanded, setExpanded] = useState(false);
+  const total = applyFilters(items, block.filters).length;
   const rows = prepareRows(items, {
     filters: block.filters,
     sortBy: block.sortBy,
     dir: block.dir ?? "desc",
-    limit: block.limit ?? 15,
+    limit: expanded ? undefined : block.limit ?? 15,
   });
 
   return (
@@ -85,6 +90,13 @@ export default function TableBlockView({
           </table>
         </div>
       )}
+      <ShowAll
+        shown={rows.length}
+        total={total}
+        expanded={expanded}
+        onToggle={() => setExpanded((v) => !v)}
+        noun="rows"
+      />
     </section>
   );
 }

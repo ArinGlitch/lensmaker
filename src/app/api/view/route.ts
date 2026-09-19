@@ -4,7 +4,13 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getProvider } from "@/lib/llm";
 import { buildFallbackSpec } from "@/lib/fallback";
-import { ALLOWED_FIELDS, CATALOG, SCHEMA_DIGEST, SCHEMA_VERSION } from "@/lib/catalog";
+import {
+  ALLOWED_FIELDS,
+  BADGE_SAFE_FIELDS,
+  CATALOG,
+  SCHEMA_DIGEST,
+  SCHEMA_VERSION,
+} from "@/lib/catalog";
 import {
   BlockSchema,
   ViewSpecEnvelopeSchema,
@@ -94,6 +100,16 @@ function validateAndPrune(raw: unknown): {
       dropped += 1;
       continue;
     }
+    // A badge renders as a small pill. The model sometimes picks a prose field
+    // (riskReason, summary) which overflows the card grid off-screen. Strip the
+    // badge rather than dropping an otherwise-good block.
+    if (b.type === "cards" && b.badge && !BADGE_SAFE_FIELDS.has(b.badge)) {
+      console.warn(`[view] stripped prose badge "${b.badge}" from cards block`);
+      kept.push({ ...b, badge: undefined });
+      seenTypes.add(b.type);
+      continue;
+    }
+
     seenTypes.add(b.type);
     kept.push(b);
   }
@@ -103,6 +119,51 @@ function validateAndPrune(raw: unknown): {
     spec: { ...envelope.data, blocks: kept },
     droppedBlocks: dropped,
   };
+}
+
+/**
+ * Money demanded by a phishing email is not money the user spent, so it must
+ * never land in a spending total. The prompt asks the model to filter it out;
+ * this makes it true.
+ *
+ * Applies to blocks that aggregate or display `amount`, unless the intent is
+ * itself about scams/security (where showing the fake figure is the point) or
+ * the model already constrained isSuspicious deliberately.
+ */
+function isMoneyBlock(b: Block): boolean {
+  if (b.type === "stat") return b.field === "amount";
+  if (b.type === "bar") return (b.field ?? "amount") === "amount";
+  return false;
+}
+
+function mentionsSecurity(intent: string): boolean {
+  return /scam|phish|fraud|suspicious|security|threat|danger/i.test(intent);
+}
+
+function excludeSuspiciousFromMoney(spec: ViewSpec, intent: string): ViewSpec {
+  if (mentionsSecurity(intent)) return spec;
+
+  let patched = 0;
+  const blocks = spec.blocks.map((b) => {
+    if (!isMoneyBlock(b)) return b;
+    const filters = b.filters ?? [];
+    if (filters.some((f) => f.field === "isSuspicious")) return b;
+    patched += 1;
+    return {
+      ...b,
+      filters: [
+        ...filters,
+        { field: "isSuspicious", op: "eq" as const, value: false },
+      ],
+    };
+  });
+
+  if (patched > 0) {
+    console.warn(
+      `[view] excluded suspicious rows from ${patched} money block(s)`,
+    );
+  }
+  return { ...spec, blocks };
 }
 
 export async function POST(req: Request) {
@@ -132,7 +193,9 @@ export async function POST(req: Request) {
     const reparsed = ViewSpecSchema.safeParse(cached.spec);
     if (reparsed.success) {
       return Response.json({
-        spec: reparsed.data,
+        // Re-applied on read: specs cached before this guard existed would
+        // otherwise still show scam amounts in spending totals.
+        spec: excludeSuspiciousFromMoney(reparsed.data, intent),
         source: "cache" satisfies ViewSource,
         provider: provider.name,
         latencyMs: 0,
@@ -157,7 +220,7 @@ export async function POST(req: Request) {
 
     const { spec: validated, droppedBlocks } = validateAndPrune(result.spec);
     if (validated) {
-      spec = validated;
+      spec = excludeSuspiciousFromMoney(validated, intent);
       if (droppedBlocks > 0) {
         console.warn(
           `[view] dropped ${droppedBlocks} malformed block(s); kept ${validated.blocks.length}`,

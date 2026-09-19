@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
+
 import type { ListBlock, Item } from "@/lib/viewspec";
-import { formatCell, prepareRows } from "@/components/blockData";
+import { formatCell, prepareRows, applyFilters } from "@/components/blockData";
 import { BLOCK_TITLE } from "@/components/theme";
 import { useSelectItem } from "@/components/ItemSelection";
+import ShowAll from "@/components/ShowAll";
 
 /**
  * Compact ranked rows — the densest block in the set. Numbered, divided by
@@ -17,11 +20,13 @@ export default function ListBlockView({
   items: Item[];
 }) {
   const selectItem = useSelectItem();
+  const [expanded, setExpanded] = useState(false);
+  const total = applyFilters(items, block.filters).length;
   const rows = prepareRows(items, {
     filters: block.filters,
     sortBy: block.sortBy,
     dir: block.dir ?? "desc",
-    limit: block.limit ?? 10,
+    limit: expanded ? undefined : block.limit ?? 10,
   });
 
   return (
@@ -57,6 +62,13 @@ export default function ListBlockView({
           ))}
         </ol>
       )}
+      <ShowAll
+        shown={rows.length}
+        total={total}
+        expanded={expanded}
+        onToggle={() => setExpanded((v) => !v)}
+        noun="rows"
+      />
     </section>
   );
 }
