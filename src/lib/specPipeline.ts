@@ -173,6 +173,57 @@ function mentionsSecurity(intent: string): boolean {
   return /scam|phish|fraud|suspicious|security|threat|danger/i.test(intent);
 }
 
+const UPCOMING_RE =
+  /\b(upcoming|due|deadline|coming up|this week|next week|soon|ahead|about to|screwed|charge)\b/i;
+const PAST_RE = /\b(missed|overdue|late|already|past|expired|did i miss|forgot)\b/i;
+
+/**
+ * Forces a date window on date-driven blocks when the intent is clearly about
+ * the future.
+ *
+ * The prompt asks the model to filter {deadlineDate, gte, "now"} for upcoming
+ * intents, but it complies inconsistently — it often returns {ne, null}
+ * ("has any deadline") instead. With 27 of 36 deadlines already past, that
+ * renders a screen of items up to 176 days overdue for a question about what
+ * is due. A prompt rule was not enough; this makes it deterministic.
+ *
+ * Skipped entirely when the intent is about what was MISSED, and never
+ * overrides a date bound the model set itself.
+ */
+export function forceTimeWindow(spec: ViewSpec, intent: string): ViewSpec {
+  if (!UPCOMING_RE.test(intent) || PAST_RE.test(intent)) return spec;
+
+  let patched = 0;
+  const blocks = spec.blocks.map((b) => {
+    const dateField =
+      "dateField" in b && typeof b.dateField === "string" ? b.dateField : null;
+    if (!dateField) return b;
+
+    const filters = b.filters ?? [];
+    // Respect any bound the model already placed on this field.
+    const bounded = filters.some(
+      (f) =>
+        f.field === dateField &&
+        (f.op === "gte" || f.op === "gt" || f.op === "lt" || f.op === "lte"),
+    );
+    if (bounded) return b;
+
+    patched += 1;
+    return {
+      ...b,
+      filters: [
+        ...filters.filter((f) => !(f.field === dateField && f.op === "ne")),
+        { field: dateField, op: "gte" as const, value: "now" },
+      ],
+    };
+  });
+
+  if (patched > 0) {
+    console.warn(`[spec] forced an upcoming window on ${patched} block(s)`);
+  }
+  return { ...spec, blocks };
+}
+
 export function excludeSuspiciousFromMoney(spec: ViewSpec, intent: string): ViewSpec {
   if (mentionsSecurity(intent)) return spec;
 

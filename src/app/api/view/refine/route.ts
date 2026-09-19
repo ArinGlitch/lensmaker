@@ -6,6 +6,7 @@ import { getProvider } from "@/lib/llm";
 import { CATALOG, SCHEMA_DIGEST, SCHEMA_VERSION } from "@/lib/catalog";
 import {
   excludeSuspiciousFromMoney,
+  forceTimeWindow,
   validateAndPrune,
 } from "@/lib/specPipeline";
 import {
@@ -76,7 +77,7 @@ export async function POST(req: Request) {
     const reparsed = ViewSpecSchema.safeParse(cached.spec);
     if (reparsed.success) {
       return Response.json({
-        spec: excludeSuspiciousFromMoney(reparsed.data, intent),
+        spec: forceTimeWindow(excludeSuspiciousFromMoney(reparsed.data, intent), intent),
         source: "cache" satisfies ViewSource,
         provider: provider.name,
         latencyMs: 0,
@@ -103,7 +104,7 @@ export async function POST(req: Request) {
     const { spec: validated, droppedBlocks } = validateAndPrune(result.spec);
     if (!validated) failureKind = "invalid";
     if (validated) {
-      spec = excludeSuspiciousFromMoney(validated, intent);
+      spec = forceTimeWindow(excludeSuspiciousFromMoney(validated, intent), intent);
       if (droppedBlocks > 0) {
         console.warn(
           `[refine] dropped ${droppedBlocks} malformed block(s); kept ${validated.blocks.length}`,

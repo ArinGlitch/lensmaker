@@ -7,6 +7,7 @@ import { buildFallbackSpec } from "@/lib/fallback";
 import { CATALOG, SCHEMA_DIGEST, SCHEMA_VERSION } from "@/lib/catalog";
 import {
   excludeSuspiciousFromMoney,
+  forceTimeWindow,
   validateAndPrune,
 } from "@/lib/specPipeline";
 import {
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
       return Response.json({
         // Re-applied on read: specs cached before this guard existed would
         // otherwise still show scam amounts in spending totals.
-        spec: excludeSuspiciousFromMoney(reparsed.data, intent),
+        spec: forceTimeWindow(excludeSuspiciousFromMoney(reparsed.data, intent), intent),
         source: "cache" satisfies ViewSource,
         provider: provider.name,
         latencyMs: 0,
@@ -100,7 +101,7 @@ export async function POST(req: Request) {
     const { spec: validated, droppedBlocks } = validateAndPrune(result.spec);
     if (!validated) failureKind = "invalid";
     if (validated) {
-      spec = excludeSuspiciousFromMoney(validated, intent);
+      spec = forceTimeWindow(excludeSuspiciousFromMoney(validated, intent), intent);
       if (droppedBlocks > 0) {
         console.warn(
           `[view] dropped ${droppedBlocks} malformed block(s); kept ${validated.blocks.length}`,

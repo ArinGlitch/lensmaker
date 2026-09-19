@@ -52,9 +52,9 @@ export default function RefineBar({
         type="button"
         onClick={() => setOpen(true)}
         disabled={disabled}
-        className="rounded border border-[var(--line-strong)] px-3 py-1.5 text-xs text-[var(--ink-2)] transition-colors hover:bg-white/5 disabled:opacity-40"
+        className="rounded border border-[var(--accent)]/45 bg-[var(--accent)]/10 px-3 py-1.5 text-xs font-medium text-[var(--ink)] transition-colors hover:bg-[var(--accent)]/20 disabled:opacity-40"
       >
-        Adjust this view
+        + Adjust this view
       </button>
     );
   }
