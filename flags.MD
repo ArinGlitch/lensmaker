@@ -6,16 +6,19 @@ divergence from the plan, or a boundary I crossed that Dev A should know about.
 
 | # | Flag | Who decides |
 |---|---|---|
-| 1 | Dev B edited `globals.css`, which is Dev A's file | Dev A |
+| 1 | Dev B edited `globals.css` and `ItemDrawer.tsx`, both Dev A's work | Dev A |
 | 2 | `compileFilters` has no callers — block filters run client-side only | Dev A |
 | 3 | Pinned versions diverge from `plan.md` §2 on 9 packages | both |
 | 4 | `next@15.5.7` carries a published security advisory | both |
-| 5 | `package-lock.json` resolves to an internal Artifactory mirror | Dev A |
-| 6 | The demo path has never been run end-to-end | both |
+| 5 | `package-lock.json` now mixes two registries | Dev A |
+| 6 | ~~Never run end-to-end~~ — now run; what is still unverified | both |
+| 7 | **Both devs now edit `src/components/**` — the lane split is gone** | both |
+| 8 | Gemini model availability is not guaranteed, and the fallback hides it | both |
+| 9 | The Gemini API key was pasted into a chat and a screenshot | you |
 
 ---
 
-## 1. Dev B edited `globals.css`, which is Dev A's file
+## 1. Dev B edited `globals.css` and `ItemDrawer.tsx`, both Dev A's work
 
 `AGENTS.md` puts `src/app/**` outside Dev B's lane. I edited
 `src/app/globals.css` anyway, because the bug in it (`bugs.MD` §2) would have
@@ -23,9 +26,17 @@ turned the page white on a light-mode machine at demo time.
 
 Kept deliberately contained: **one file, one purpose, one isolated commit**
 (`fix(styles): commit the page plane to the dark palette`). Easy to take as-is,
-redo differently, or revert. No other file outside the Dev B lane was touched —
-`Renderer.tsx`, `page.tsx`, `viewspec.ts`, `catalog.ts`, `src/lib/**` and
-`src/app/api/**` are all untouched.
+redo differently, or revert.
+
+Since then, two more crossings, both in the frontend pass:
+
+- `globals.css` again, which now carries the whole design token set.
+- `ItemDrawer.tsx` — Dev A's reading pane — got a **colours-only** pass so it
+  matches the new surfaces. No structural or behavioural change; the old
+  `#1a1a19` panel simply no longer matched anything else on screen.
+
+Still untouched: `Renderer.tsx`, `page.tsx`, `viewspec.ts`, `catalog.ts`,
+`src/lib/**`, `src/app/api/**`, `prisma/**`.
 
 ---
 
@@ -103,7 +114,7 @@ mirror before touching it; a version bump the day of the demo is its own risk.
 
 ---
 
-## 5. `package-lock.json` resolves to an internal Artifactory mirror
+## 5. `package-lock.json` now mixes two registries
 
 Every one of the 610 `resolved` URLs points at
 `artifactory.foc.zone/.../npm-public-virtual`. That host is unreachable from
@@ -116,24 +127,119 @@ To build and verify Dev B's work I temporarily repointed those URLs to
 what Dev A pushed — this repo carries no trace of the workaround. The integrity
 hashes are the same either way, since both hosts serve the same tarballs.
 
-**Decision needed:** if anyone else needs to build this repo, regenerate the
-lockfile against public npm. If it is only ever built on Dev A's machine, leave it.
+**This has since changed, and Dev A needs to know.** Installing
+`@modelcontextprotocol/sdk` (bugs.MD #7) added **66 new entries resolved from
+`registry.npmjs.org`**, alongside the 610 existing Artifactory ones. The lockfile
+now points at two registries at once.
+
+The 610 original entries were left byte-identical — only new packages were added
+— so nothing Dev A already has is disturbed. But if Artifactory blocks public
+npm, `npm ci` on their machine will fail on those 66. Running a plain
+`npm install` there should re-resolve them through the mirror.
+
+**Decision needed:** regenerate the lockfile on whichever machine has to build
+it, or accept that only one machine can install cleanly.
 
 ---
 
-## 6. The demo path has never been run end-to-end
+## 6. ~~The demo path has never been run end-to-end~~ — partly closed
 
-Docker is not available on the Dev B machine, so there is no Postgres, and
-therefore no login, no `/api/data`, and no `/api/view` against real data.
+**Update: the stack now runs on the Dev B machine.** Docker Desktop was
+installed all along, just not started. Postgres is up on 5434, migrations are
+applied and 29 rows are seeded.
 
-What **was** verified: `tsc --noEmit` clean, `next build` green, and every block
-rendered against the committed fixtures at 0, 1 and 40 rows with the filter and
-aggregate helpers checked against the real fixture values.
+Verified working:
 
-What was **not** verified: login → intent → model call → cache → render, the
-ablation toggle in the real page, saving and reloading a view, and the fallback
-path under a deliberately malformed spec.
+| Check | Result |
+|---|---|
+| `GET /` unauthenticated | 307 → `/login` |
+| `GET /api/data` unauthenticated | 401 `{"error":"Unauthorized"}` |
+| Login with the demo credentials | 200, `lm_token` cookie set |
+| `GET /api/data` authenticated | 29 items |
+| `POST /api/view` | 200 with a valid spec — **never 500s**, confirmed both with no credentials at all and with a live key |
 
-`AGENTS.md` calls this the *"first joint checkpoint"* and says not to defer it to
-the last hour. **It is still outstanding.** It needs a machine with Docker —
-Dev A's.
+Still **not** verified, and this is the part that matters:
+
+- **A model-composed screen has never rendered.** Every intent currently hits
+  the fallback because of bugs.MD #8, so the four scripted intents produce four
+  identical screens. The central claim of the project is still unproven in a
+  browser.
+- Saving and reloading a view.
+- The `insufficient_evidence` → `EmptyState` path with a real model response.
+- The ablation toggle in the real page (verified in a component harness only).
+
+Once #8 is fixed, walk `plan.md` §10 end to end. That is the remaining half of
+the joint checkpoint.
+
+---
+
+## 7. Both devs now edit `src/components/**` — the lane split is gone
+
+`AGENTS.md` assigns `src/components/**` to Dev B and says *"Dev A never edits a
+B component's body."* That is no longer what is happening, in both directions:
+
+- Dev A added `useSelectItem` click-to-open handlers inside `CardsBlock`,
+  `ListBlock`, `TimelineBlock`, `TableBlock` and `FixedDashboard`, and created
+  `ItemDrawer.tsx` and `ItemSelection.tsx` in the Dev B directory.
+- Dev B restyled all of those, plus `ItemDrawer.tsx`.
+
+**This already caused one near-miss.** The frontend pass rewrote
+`CardsBlock.tsx` from scratch, which silently deleted Dev A's
+`useSelectItem` handler — the card stopped opening the email. It was caught by
+noticing a later edit did not match the file, and restored with the new styling
+intact. Nothing was lost, but only because it was spotted.
+
+The risk is specific: a **whole-file rewrite** cannot see a feature somebody
+added to that file since the last pull. Restyles are exactly the operation that
+rewrites whole files.
+
+**Decision needed.** Either reassert the split (behaviour is Dev A's, appearance
+is Dev B's, and a restyle always re-reads the file first), or drop the pretence
+and agree to short-lived branches with a read before every rewrite. What does
+not work is half-following a protocol that both devs have already stopped
+following.
+
+---
+
+## 8. Gemini model availability is not guaranteed, and the fallback hides it
+
+`gemini-3.8-flash` — the `plan.md` default — returned
+`503 This model is currently experiencing high demand` repeatedly during
+testing, interleaved with successes, plus one `403 The caller does not have
+permission`. It is not consistently available.
+
+`GEMINI_MODEL` in `.env` is currently set to **`gemini-3.1-flash-lite`**, which
+answered reliably at ~1.6s. `gemini-3.8-flash` does work — it is the
+availability, not the model id, that is unreliable.
+
+Two things compound this:
+
+1. **There is no retry.** A single transient 503 turns into a fallback screen,
+   and the user sees a layout that does not answer their question.
+2. **The fallback hides it.** A 503 and a great answer both return HTTP 200. On
+   stage you would not know which one you got without reading `source`.
+
+**Decision needed before the demo:** warm `ViewSpecCache` for the four scripted
+intents so the demo makes **zero live calls** and cannot be taken down by a
+spike. `scripts/warm-cache.ts` already exists for this. A single retry on 503 in
+the provider is worth considering too, but the warm cache is the real
+protection — and `plan.md` §9 already calls for it.
+
+To see through the fallback at any time:
+
+```bash
+npx tsx --env-file=.env scripts/check-gemini.ts
+```
+
+---
+
+## 9. The Gemini API key was pasted into a chat and a screenshot
+
+The key now in `.env` was shared in conversation and in a screenshot of the
+AI Studio key dialog, so it exists outside the machine it is used on. `.env` is
+gitignored and the key has **not** been committed — this is about where it has
+already been, not where it is going.
+
+Not urgent for a hackathon key with a free-tier quota. Worth rotating at
+https://aistudio.google.com once the demo is over, and worth not reusing that
+key for anything with billing attached.
