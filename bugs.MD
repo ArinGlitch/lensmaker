@@ -15,6 +15,7 @@ throwaway harness and screenshotting them in headless Chrome, not by reading cod
 | 7 | Gemini provider dies on a missing peer dependency | blocks the demo provider | **Fixed** |
 | 8 | One malformed block sinks the whole spec → every intent falls back | **demo-breaking** | **Fixed** by Dev A |
 | 9 | Gemini runs with thinking enabled, against `plan.md` §8 | latency | **Fixed** by Dev A |
+| 10 | `limit` is stripped server-side, so blocks show rows the intent excluded | relevance | **Open** — Dev A's file |
 
 ---
 
@@ -303,9 +304,11 @@ elsewhere and this entry can be closed as a non-issue.
 
 ---
 
-## 10. `/api/view` strips `limit`, so blocks show rows the intent excluded
+## 10. `limit` is stripped server-side, so blocks show rows the intent excluded
 
-**Where:** `src/app/api/view/route.ts:117` — **Dev A's file. Reported, not fixed.**
+**Where:** `src/lib/specPipeline.ts:156` — **Dev A's file. Reported, not fixed.**
+(Moved out of `api/view/route.ts` when the spec pipeline was extracted; the
+behaviour is unchanged.)
 
 **Severity:** the generative screen answers a narrower question than it shows.
 
@@ -321,7 +324,7 @@ selection in two different ways:
   6 to charge" — expressed as sort + cap. Drop the cap and the block silently
   widens to the whole corpus.
 
-`/api/view` now deletes `limit` from every block:
+The pipeline deletes `limit` from every block:
 
 ```ts
 kept.push("limit" in b ? ({ ...b, limit: undefined } as Block) : b);
