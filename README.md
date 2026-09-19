@@ -28,24 +28,19 @@ Open http://localhost:3000 — login is pre-filled.
 
 ### Provider switch
 
-Development and the demo both run on Bedrock Haiku. The Gemini path is fully implemented and selected by one env var.
+Gemini is the provider, selected by env var. The provider interface is isolated in one file so another model can be dropped in without touching anything else.
 
 ```bash
-# haiku — requires an active `bedrock` SSO session
-LLM_PROVIDER=haiku
-AWS_PROFILE=bedrock
-AWS_REGION=us-east-2
-BEDROCK_MODEL_ID=us.anthropic.claude-haiku-4-5-20251001-v1:0
-
-# gemini
 LLM_PROVIDER=gemini
 GEMINI_API_KEY=...
 GEMINI_MODEL=gemini-3.8-flash
 ```
 
-If the Bedrock session expires: `aws sso login --profile bedrock`.
+Verify the Gemini path with `npm run gemini:check`, which bypasses the
+never-fail fallback so a provider error surfaces as an error rather than
+looking like an ordinary fallback screen.
 
-Selection happens in exactly one place (`src/lib/llm/index.ts`) and nowhere else. Providers are imported **lazily** so the unselected SDK is never bundled — this is load-bearing, see the environment notes below. Both providers send byte-identical instructions from the shared `llm/prompt.ts`; only transport differs. Gemini uses native `responseSchema` structured output with `thinkingBudget: 0`; Haiku forces the same schema through a Converse tool definition. Both run at `temperature: 0.2` for generation (`0` for extraction), so the same question yields the same screen.
+Selection happens in exactly one place (`src/lib/llm/index.ts`) and nowhere else. The provider is imported **lazily** so its SDK is never bundled into the client — this is load-bearing, see the environment notes below. Gemini uses native `responseSchema` structured output with `thinkingBudget: 0`, at `temperature: 0.2` for generation (`0` for extraction), so the same question yields the same screen.
 
 ---
 
@@ -82,10 +77,10 @@ Pipeline A is why there are no forms: nobody typed the structured data. `llm/ext
 npm run db:seed
 
 # extract only what is new, then commit extracted.json
-AWS_PROFILE=bedrock SEED_RUN_EXTRACTION=1 npm run db:seed
+SEED_RUN_EXTRACTION=1 npm run db:seed
 
 # force a full re-extraction (one call per email; rarely needed)
-SEED_FORCE_REEXTRACT=1 AWS_PROFILE=bedrock SEED_RUN_EXTRACTION=1 npm run db:seed
+SEED_FORCE_REEXTRACT=1 SEED_RUN_EXTRACTION=1 npm run db:seed
 ```
 
 The fixture is rebuilt in corpus order, reusing cached rows, so one failed call never drops previously-good extractions. If zero rows survive, it throws rather than clobbering `extracted.json`.
@@ -151,7 +146,7 @@ colours come from `components/theme.ts` and CSS variables, never hardcoded.
 
 ## Measured behaviour
 
-Real calls against `us.anthropic.claude-haiku-4-5-20251001-v1:0`. Cold (cache-miss) latency to a rendered screen is **2.2–5.0s**; the response carries a measured `latencyMs` you can read in the SpecInspector. Repeat intents return from cache in 0ms with zero tokens.
+Cold (cache-miss) latency to a rendered screen is **2.2–5.0s**; the response carries a measured `latencyMs` you can read in the SpecInspector. Repeat intents return from cache in 0ms with zero tokens.
 
 The four scripted intents each compose a structurally different screen. Warm the cache and read the inspector rather than trusting a quoted number.
 
@@ -196,7 +191,7 @@ The four scripted intents each compose a structurally different screen. Warm the
 - **Next is 15.5.7, not 16.x.** The npm proxy quarantines packages published within the last 7 days, so dependencies are pinned to versions it allows. `package.json` carries `overrides` for the same reason. **`plan.md` §2 describes a stack this repo does not have** — it diverges on nine packages, and the major gaps matter: zod is **3.25.76** (not 4.x) and recharts is **2.15.3** (not 3.x), with different APIs. The installed versions in `package.json` are the truth.
 - **`next@15.5.7` carries a published security advisory.** Not a demo risk (nothing is internet-facing, auth is a seeded demo user), but real. Check whether a patched 15.x is reachable through the mirror before bumping.
 - **`react@19.0.0` is listed in the registry but its tarball 404s** — pinned to 19.2.8.
-- **Provider SDKs are lazily imported** and listed in `serverExternalPackages`. `@google/genai@1.5.0` declares `@modelcontextprotocol/sdk` as an *optional* peer dependency but imports it unconditionally, so it is an explicit dependency here. Eagerly importing `@google/genai` breaks the Next build and takes the Haiku path down with it.
+- **Provider SDKs are lazily imported** and listed in `serverExternalPackages`. `@google/genai@1.5.0` declares `@modelcontextprotocol/sdk` as an *optional* peer dependency but imports it unconditionally, so it is an explicit dependency here. Eagerly importing `@google/genai` breaks the Next build and takes the fallback provider down with it.
 - **`package-lock.json` mixes two registries.** 610 entries resolve from an internal Artifactory mirror and 66 from `registry.npmjs.org`. `npm ci` may fail on one machine or the other; a plain `npm install` re-resolves.
 - **Recharts entry animation is disabled** (`isAnimationActive={false}`). Bars grow from zero width via `requestAnimationFrame`, so on a slow or headless first paint the chart rendered axes and labels with no bars at all.
 

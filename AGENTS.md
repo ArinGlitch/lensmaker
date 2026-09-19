@@ -76,7 +76,6 @@ Dev A runs sub-agents and takes everything with cross-cutting risk. Tasks are or
 ### A3 — LLM layer
 - `src/lib/llm/types.ts` — `LLMProvider` interface (returns `unknown` spec)
 - `src/lib/llm/prompt.ts` — one shared prompt builder; terse catalog description, ~1.5k tokens max
-- `src/lib/llm/haiku.ts` — Bedrock Converse, region `us-east-2`, profile `bedrock`; force JSON via tool definition
 - `src/lib/llm/gemini.ts` — `@google/genai`, `responseMimeType: "application/json"` + `responseSchema` mirroring the Zod contract; `temperature: 0.2`; `thinkingBudget: 0`; model from `GEMINI_MODEL` (default `gemini-3.8-flash`)
 - `src/lib/llm/index.ts` — select on `LLM_PROVIDER`
 

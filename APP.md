@@ -194,14 +194,13 @@ Every number below was counted from `prisma/fixtures/extracted.json`.
 - **Category mix:** 31 deadline, 18 general, 17 receipt, 15 subscription, 4 security. **Urgency mix:** 36 high, 19 medium, 30 low.
 - **49 rows carry an amount**; 19 have a charge date.
 - **Zero tokens to seed.** `npm run db:seed` reads the committed fixture. No model call, no network.
-- **A warm cache means zero live calls are needed.** `npm run demo:warm` pre-generates the four scripted intents in `src/lib/intents.ts` and warns if any lands on the fallback. Cold latency on Haiku is 2.2–5.0s; a cache hit is 0ms.
+- **A warm cache means zero live calls are needed.** `npm run demo:warm` pre-generates the four scripted intents in `src/lib/intents.ts` and warns if any lands on the fallback. Cold latency on Gemini is 2.2–5.0s; a cache hit is 0ms.
 
 ---
 
 ## Honest limitations
 
 - **The emails are synthetic.** The corpus is persona-authored — 39 emails from a student persona and 46 from a professional persona, merged by `scripts/merge-personas.ts`. They were written to be realistically messy (deadlines buried in the last paragraph, trial-conversion notices, long marketing bodies), but this is not a real inbox and there is no Gmail OAuth. That was a deliberate non-goal: OAuth verification takes weeks, and fixtures are reproducible.
-- **The demo runs on Bedrock Haiku, not Gemini.** The Gemini provider is fully implemented — native `responseSchema`, `thinkingBudget: 0`, one env var to switch — and is architecturally the better path. But `gemini-3.8-flash` returned intermittent `503 high demand` and one `403` during testing, so the demo runs on Haiku. Availability, not the model id, is the problem.
 - **There is no retry on a transient provider error.** A single 503 becomes a fallback screen. The warm cache is the real protection.
 - **Filters run client-side.** `lib/filters.ts` exports `compileFilters()` to compile the DSL into a Prisma `where`, but **it has no callers** — `/api/data` returns every row and `Renderer` hands the full array to every block, which filters it in the browser via `applyFilters()` in `blockData.ts`. This is demo-correct and verified, but it means the filter logic exists in two places that must stay in step (a `null`-semantics divergence between them has already cost one demo-breaking bug), the server-side Prisma path is dead code as it stands, and every row reaches the browser regardless of what a block asks for. Fine for 85 rows; not what you would ship.
 - **ESLint has never actually run on this repo.** `eslint.config.mjs` omits the `.js` extension on two subpath imports, so the config fails to load. `next build` treats it as non-fatal, so nothing is blocked — but no file here has been linted, and the first real run may surface findings.

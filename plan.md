@@ -54,8 +54,7 @@ Pipeline A is why we can claim "no forms": nobody ever typed structured data. Th
 | recharts | `3.10.1` | bar chart |
 | tailwindcss | `4.3.3` | styling |
 | tsx | `4.23.13` | runs `seed.ts` |
-| @aws-sdk/client-bedrock-runtime | `3.1136.0` | Haiku provider (dev) |
-| @google/genai | `2.23.0` | Gemini provider (demo). NOT `@google/generative-ai` — that package is deprecated |
+| @google/genai | `2.23.0` | Gemini provider. NOT `@google/generative-ai` — that package is deprecated |
 
 **Host port 5434, not 5432.** Ports 5432 and 5433 are already bound by SSH tunnels on the dev machine. Compose maps `5434:5432`.
 
@@ -97,7 +96,6 @@ lensmaker/
 │  │  └─ llm/
 │  │     ├─ types.ts              # LLMProvider interface
 │  │     ├─ prompt.ts             # shared prompt builder
-│  │     ├─ haiku.ts              # Bedrock provider
 │  │     ├─ gemini.ts             # Gemini provider
 │  │     └─ index.ts              # env-based selection
 │  └─ components/
@@ -253,7 +251,7 @@ Deliberately basic, but correct:
 ```ts
 // src/lib/llm/types.ts
 export interface LLMProvider {
-  name: "haiku" | "gemini"
+  name: "gemini" | "gemini"
   generateViewSpec(input: {
     intent: string
     schemaDigest: SchemaDigest
@@ -262,12 +260,11 @@ export interface LLMProvider {
 }
 ```
 
-Selected by `LLM_PROVIDER=haiku|gemini`. Returns **`unknown`** on purpose — the caller validates. A provider never validates its own output.
+Selected by `LLM_PROVIDER=gemini`. Returns **`unknown`** on purpose — the caller validates. A provider never validates its own output.
 
-**Build on Haiku, optimize for Gemini.** The prompt lives in one shared file (`prompt.ts`) so both providers send identical instructions. Differences are confined to the transport:
+**Build on Gemini, optimize for Gemini.** The prompt lives in one shared file (`prompt.ts`) so both providers send identical instructions. Differences are confined to the transport:
 
-- **Haiku** (`@aws-sdk/client-bedrock-runtime`, Converse API): force JSON via a tool definition whose input schema is the ViewSpec. Region `us-east-2`, profile `bedrock`.
-- **Gemini** (`@google/genai`): `responseMimeType: "application/json"` + `responseSchema` (native structured output — strictly better than Haiku's tool hack, which is why we optimize for it). Default `gemini-3.8-flash`; `GEMINI_MODEL` env allows swapping to a Pro model if tokens are purchased.
+- **Gemini** (`@google/genai`): `responseMimeType: "application/json"` + `responseSchema` (native structured output — strictly better than Gemini's tool hack, which is why we optimize for it). Default `gemini-3.8-flash`; `GEMINI_MODEL` env allows swapping to a Pro model if tokens are purchased.
 
 **Gemini-specific optimizations to build in from the start:**
 - `responseSchema` mirrors the Zod ViewSpec exactly (generate from Zod where practical).
@@ -285,7 +282,7 @@ Third-party sources disagree wildly on Gemini free-tier limits (~20/day vs ~1500
 Therefore:
 1. **Pipeline A never runs live.** `extracted.json` is committed; `seed.ts` reads it. Re-extraction is opt-in via `SEED_RUN_EXTRACTION=1`.
 2. **Every ViewSpec is cached** by intent hash. Rehearsing the demo costs zero tokens after the first run.
-3. Dev happens **entirely on Haiku**. Gemini is touched only for final rehearsal.
+3. Dev happens **entirely on Gemini**. Gemini is touched only for final rehearsal.
 4. Demo has **4 scripted intents** → ≤5 live calls worst case, 0 if cache is warm.
 
 ---
@@ -329,7 +326,7 @@ Dev A runs sub-agents and takes the architectural core and anything with cross-c
 - `/api/data`
 
 **A3 — LLM layer**
-- `llm/types.ts`, `llm/prompt.ts`, `llm/haiku.ts`, `llm/gemini.ts`, `llm/index.ts`
+- `llm/types.ts`, `llm/prompt.ts`, `llm/gemini.ts`, `llm/gemini.ts`, `llm/index.ts`
 - Gemini `responseSchema` generated to match Zod exactly
 
 **A4 — The `/api/view` brain**
@@ -413,7 +410,7 @@ Dev B never waits on Dev A past A0. Dev A stubs any missing Dev B component with
 
 **Ops**
 - As a dev, `docker compose up` gives me a working app with seeded data and no manual steps. *(A0, A6)*
-- As a dev, I switch Haiku→Gemini by changing one env var. *(A3)*
+- As a dev, I switch Gemini→Gemini by changing one env var. *(A3)*
 
 ---
 
@@ -434,4 +431,4 @@ Dev B never waits on Dev A past A0. Dev A stubs any missing Dev B component with
 
 ## 15. Explicit non-goals
 
-Do not build: Gmail OAuth (verification takes weeks; fixtures are strictly better for a demo), multi-agent orchestration (saturated — not our novelty), a chat drawer (scores against "break the text box"), `.ics` export, unsubscribe automation, Redis, streaming/audio/image generation (no free tier, and Haiku can't substitute), real auth hardening beyond the basics, or any dropdown/filter UI.
+Do not build: Gmail OAuth (verification takes weeks; fixtures are strictly better for a demo), multi-agent orchestration (saturated — not our novelty), a chat drawer (scores against "break the text box"), `.ics` export, unsubscribe automation, Redis, streaming/audio/image generation (no free tier, and Gemini can't substitute), real auth hardening beyond the basics, or any dropdown/filter UI.

@@ -91,14 +91,6 @@ structurally different one, not filtered. Pause a full second on each so it regi
 **Warm the cache before presenting:** `npm run demo:warm`. Cached responses return in 0ms;
 cold is 2.2–5.0s, and four cold calls would eat 20 seconds of a 75-second video.
 
-### If a judge asks about Gemini vs Haiku
-
-"The Gemini provider is fully implemented with native structured output — one env var
-switches it. We hit intermittent 503s under load during testing, so the recorded demo runs
-on a Bedrock fallback through the same provider interface."
-
-That is a *strength* answer — it shows a real abstraction, not a wrapper.
-
 ### Backup answers
 
 - **"How do you stop it hallucinating a component?"** → "It can't. It picks from a fixed

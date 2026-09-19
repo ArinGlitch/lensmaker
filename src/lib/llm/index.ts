@@ -17,10 +17,14 @@ export type { LLMProvider, GenerateInput, GenerateResult } from "./types";
  * the Next build when eagerly imported, which would take the Haiku path down
  * with it.
  */
+/**
+ * Gemini is the primary provider. The Bedrock path is a fallback behind the
+ * same interface, and accepts either "bedrock" or the legacy "haiku" value so
+ * existing .env files keep working.
+ */
 export function getProviderName(): "haiku" | "gemini" {
-  return (process.env.LLM_PROVIDER ?? "haiku").toLowerCase() === "gemini"
-    ? "gemini"
-    : "haiku";
+  const raw = (process.env.LLM_PROVIDER ?? "gemini").toLowerCase();
+  return raw === "bedrock" || raw === "haiku" ? "haiku" : "gemini";
 }
 
 export function getProvider(): LLMProvider {

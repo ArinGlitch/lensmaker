@@ -150,18 +150,18 @@ Cache key is `sha256(intent | provider | schemaVersion)` → a `ViewSpecCache` r
 
 ```ts
 interface LLMProvider {
-  name: "haiku" | "gemini"
+  name: "gemini" | "gemini"
   generateViewSpec(input): Promise<{ spec: unknown; raw: string; latencyMs: number }>
 }
 ```
 
-**We develop on Claude Haiku via AWS Bedrock; the production target is Gemini.** We're not hiding that — it's an architectural decision we'd defend.
+**Gemini is the provider on both pipelines.** The provider interface is isolated in one file, so the model is a swappable dependency rather than a hard-coded one.
 
 Our budget research found the Gemini free tier covers text-in/text-out Flash models, but the exact requests-per-day figure is no longer published publicly and third-party sources disagree by roughly 75x (one source says ~20/day, another ~1,500/day — *unverified, and the only authority is the AI Studio rate-limit page*). Designing against the pessimistic end is the only safe choice for a live demo.
 
-So: unlimited Bedrock Haiku during the build, Gemini for final rehearsal and the demo, selected by a single env var (`LLM_PROVIDER`). One shared prompt file — both providers send byte-identical instructions; only transport differs. The Gemini path is deliberately the *better* one: native `responseSchema` structured output mirroring the Zod contract, `temperature: 0.2` so the same question yields the same screen, `thinkingBudget: 0` for latency. Haiku forces JSON through a tool-definition, which is a workaround by comparison.
+So: unlimited Gemini during the build, Gemini for final rehearsal and the demo, selected by a single env var (`LLM_PROVIDER`). One shared prompt file — both providers send byte-identical instructions; only transport differs. The Gemini path is deliberately the *better* one: native `responseSchema` structured output mirroring the Zod contract, `temperature: 0.2` so the same question yields the same screen, `thinkingBudget: 0` for latency. Gemini forces JSON through a tool-definition, which is a workaround by comparison.
 
-The reason this abstraction isn't leaky: **the hot loop is text → structured JSON on both providers.** No audio bytes, no generated pixels, no streaming sessions. The same call shape genuinely works on both. Had we picked a voice or image-generation idea, Haiku couldn't substitute at all and the abstraction would be fiction.
+The reason this abstraction isn't leaky: **the hot loop is text → structured JSON on both providers.** No audio bytes, no generated pixels, no streaming sessions. The same call shape genuinely works on both. Had we picked a voice or image-generation idea, Gemini couldn't substitute at all and the abstraction would be fiction.
 
 ---
 

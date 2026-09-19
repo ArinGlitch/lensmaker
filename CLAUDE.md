@@ -69,10 +69,10 @@ Read `plan.md` before writing any code. It is the architecture contract. This fi
 
 ## LLM provider rules
 
-- One shared prompt in `src/lib/llm/prompt.ts`. Both providers send identical instructions; only transport differs.
+- One shared prompt in `src/lib/llm/prompt.ts`.
 - `generateViewSpec()` returns `{ spec: unknown, raw: string, latencyMs: number }`. A provider never validates its own output.
-- Selection by `LLM_PROVIDER=haiku|gemini` in `llm/index.ts`. No provider-specific branching anywhere else in the codebase.
-- **Build on Haiku, optimize for Gemini.** Gemini gets native `responseSchema`; Haiku uses a tool-definition to force JSON. Keep the Gemini path the better one.
+- Selection by `LLM_PROVIDER=gemini` in `llm/index.ts`. No provider-specific branching anywhere else in the codebase.
+- Gemini uses native `responseSchema` structured output with `thinkingBudget: 0`.
 - `temperature: 0.2` — same question should produce the same screen.
 - One call per question. No agent loops, no multi-turn (multi-agent is saturated; it is not our novelty).
 - Log every call's provider, latency, cache-hit status, and validation result. You will need this to debug at hour four.
@@ -83,7 +83,7 @@ Read `plan.md` before writing any code. It is the architecture contract. This fi
 
 - **Never call the LLM in a loop or during seeding at demo time.** `prisma/fixtures/extracted.json` is committed; `seed.ts` reads it.
 - Re-extraction is opt-in only: `SEED_RUN_EXTRACTION=1`.
-- Develop against `LLM_PROVIDER=haiku` (unlimited). Switch to Gemini only for final rehearsal.
+- Warm the cache before any rehearsal: a cache hit costs zero tokens.
 - Every ViewSpec is cached by `sha256(intent|provider|schemaVersion)`.
 - If you're about to add a feature that calls the LLM more than once per user action, don't.
 
