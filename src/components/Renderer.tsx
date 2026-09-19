@@ -8,6 +8,14 @@ import TimelineBlockView from "./blocks/TimelineBlock";
 import ListBlockView from "./blocks/ListBlock";
 import TableBlockView from "./blocks/TableBlock";
 import CalloutBlockView from "./blocks/CalloutBlock";
+import VerdictBlockView from "./blocks/VerdictBlock";
+import CalendarBlockView from "./blocks/CalendarBlock";
+import BucketsBlockView from "./blocks/BucketsBlock";
+import ComparisonBlockView from "./blocks/ComparisonBlock";
+import CountdownBlockView from "./blocks/CountdownBlock";
+import DigestBlockView from "./blocks/DigestBlock";
+import EntityBlockView from "./blocks/EntityBlock";
+import SmallMultiplesBlockView from "./blocks/SmallMultiplesBlock";
 
 /**
  * The security boundary. An unknown block type renders nothing — the model
@@ -41,6 +49,26 @@ export default function Renderer({
           case "callout":
             return (
               <CalloutBlockView key={block.id} block={block} items={items} />
+            );
+          case "verdict":
+            return <VerdictBlockView key={block.id} block={block} items={items} />;
+          case "calendar":
+            return <CalendarBlockView key={block.id} block={block} items={items} />;
+          case "buckets":
+            return <BucketsBlockView key={block.id} block={block} items={items} />;
+          case "comparison":
+            return (
+              <ComparisonBlockView key={block.id} block={block} items={items} />
+            );
+          case "countdown":
+            return <CountdownBlockView key={block.id} block={block} items={items} />;
+          case "digest":
+            return <DigestBlockView key={block.id} block={block} items={items} />;
+          case "entity":
+            return <EntityBlockView key={block.id} block={block} items={items} />;
+          case "smallMultiples":
+            return (
+              <SmallMultiplesBlockView key={block.id} block={block} items={items} />
             );
           default:
             return null;

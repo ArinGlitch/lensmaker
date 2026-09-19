@@ -124,6 +124,108 @@ export const CalloutBlockSchema = z.object({
   message: z.string().min(1).max(280),
 });
 
+/* ---------------------- persona-driven blocks (round 2) -------------------- */
+
+/**
+ * The answer as a WORD, not a number. Every persona's top-ranked intent wanted
+ * a verdict first ("am I screwed this week?", "what's blocked on me?"), and a
+ * StatBlock cannot express one.
+ */
+export const VerdictBlockSchema = z.object({
+  ...base,
+  type: z.literal("verdict"),
+  /** Short phrase, e.g. "3 things need you" or "You're clear". */
+  headline: z.string().min(1).max(80),
+  tone: z.enum(["good", "warn", "danger", "neutral"]),
+  /** Optional one-liner under the headline. */
+  detail: z.string().max(200).optional(),
+  /** Supporting rows: which field to show, sorted how. */
+  primary: z.string().max(40).optional(),
+  secondary: z.string().max(40).optional(),
+  sortBy: z.string().max(40).optional(),
+  dir: DirSchema.optional(),
+  limit: z.number().int().min(1).max(10).optional(),
+});
+
+/** Month or week GRID. Timeline is a vertical rail; this is a different shape. */
+export const CalendarBlockSchema = z.object({
+  ...base,
+  type: z.literal("calendar"),
+  dateField: z.string().min(1).max(40),
+  primary: z.string().min(1).max(40),
+  /** "month" shows a 7-column grid; "week" shows a single row of 7 days. */
+  scale: z.enum(["month", "week"]).optional(),
+});
+
+/** Age-of-inaction histogram: how long things have been sitting. */
+export const BucketsBlockSchema = z.object({
+  ...base,
+  type: z.literal("buckets"),
+  dateField: z.string().min(1).max(40),
+  /** Day boundaries, ascending. Defaults to 2/7/14/30 when omitted. */
+  edges: z.array(z.number().int().min(1).max(3650)).min(1).max(6).optional(),
+  label: z.string().max(80).optional(),
+});
+
+/** Two numbers side by side: old vs new price, budget vs actual, MoM. */
+export const ComparisonBlockSchema = z.object({
+  ...base,
+  type: z.literal("comparison"),
+  label: z.string().min(1).max(80),
+  field: z.string().min(1).max(40),
+  agg: AggSchema,
+  format: FormatSchema.optional(),
+  /** The two sides, each a filtered slice of the same rows. */
+  leftLabel: z.string().min(1).max(40),
+  leftFilters: z.array(FilterSchema).max(6),
+  rightLabel: z.string().min(1).max(40),
+  rightFilters: z.array(FilterSchema).max(6),
+});
+
+/** Live-ticking time remaining until the soonest matching date. */
+export const CountdownBlockSchema = z.object({
+  ...base,
+  type: z.literal("countdown"),
+  dateField: z.string().min(1).max(40),
+  label: z.string().max(80).optional(),
+  primary: z.string().max(40).optional(),
+});
+
+/**
+ * Grouped counts, splitting still-actionable from already-expired. Answers
+ * "what did I miss while I was out".
+ */
+export const DigestBlockSchema = z.object({
+  ...base,
+  type: z.literal("digest"),
+  groupBy: z.string().min(1).max(40),
+  /** Date field used to decide actionable vs expired. */
+  dateField: z.string().max(40).optional(),
+  primary: z.string().max(40).optional(),
+});
+
+/** One entity (vendor) rolled up across every row that mentions it. */
+export const EntityBlockSchema = z.object({
+  ...base,
+  type: z.literal("entity"),
+  groupBy: z.string().min(1).max(40),
+  field: z.string().max(40).optional(),
+  agg: AggSchema.optional(),
+  format: FormatSchema.optional(),
+  limit: z.number().int().min(1).max(12).optional(),
+});
+
+/** Grid of identical mini-cards, one per group, so outliers pop. */
+export const SmallMultiplesBlockSchema = z.object({
+  ...base,
+  type: z.literal("smallMultiples"),
+  groupBy: z.string().min(1).max(40),
+  field: z.string().max(40).optional(),
+  agg: AggSchema.optional(),
+  format: FormatSchema.optional(),
+  limit: z.number().int().min(1).max(12).optional(),
+});
+
 export const BlockSchema = z.discriminatedUnion("type", [
   StatBlockSchema,
   CardsBlockSchema,
@@ -132,6 +234,14 @@ export const BlockSchema = z.discriminatedUnion("type", [
   ListBlockSchema,
   TableBlockSchema,
   CalloutBlockSchema,
+  VerdictBlockSchema,
+  CalendarBlockSchema,
+  BucketsBlockSchema,
+  ComparisonBlockSchema,
+  CountdownBlockSchema,
+  DigestBlockSchema,
+  EntityBlockSchema,
+  SmallMultiplesBlockSchema,
 ]);
 
 /* -------------------------------- viewspec -------------------------------- */
@@ -193,6 +303,14 @@ export type TimelineBlock = z.infer<typeof TimelineBlockSchema>;
 export type ListBlock = z.infer<typeof ListBlockSchema>;
 export type TableBlock = z.infer<typeof TableBlockSchema>;
 export type CalloutBlock = z.infer<typeof CalloutBlockSchema>;
+export type VerdictBlock = z.infer<typeof VerdictBlockSchema>;
+export type CalendarBlock = z.infer<typeof CalendarBlockSchema>;
+export type BucketsBlock = z.infer<typeof BucketsBlockSchema>;
+export type ComparisonBlock = z.infer<typeof ComparisonBlockSchema>;
+export type CountdownBlock = z.infer<typeof CountdownBlockSchema>;
+export type DigestBlock = z.infer<typeof DigestBlockSchema>;
+export type EntityBlock = z.infer<typeof EntityBlockSchema>;
+export type SmallMultiplesBlock = z.infer<typeof SmallMultiplesBlockSchema>;
 export type Block = z.infer<typeof BlockSchema>;
 export type ViewSpec = z.infer<typeof ViewSpecSchema>;
 

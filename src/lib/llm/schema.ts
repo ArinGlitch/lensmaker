@@ -37,7 +37,23 @@ export const VIEWSPEC_JSON_SCHEMA = {
           id: { type: "string" },
           type: {
             type: "string",
-            enum: ["stat", "cards", "bar", "timeline", "list", "table", "callout"],
+            enum: [
+              "stat",
+              "cards",
+              "bar",
+              "timeline",
+              "list",
+              "table",
+              "callout",
+              "verdict",
+              "calendar",
+              "buckets",
+              "comparison",
+              "countdown",
+              "digest",
+              "smallMultiples",
+              "entity",
+            ],
           },
           title: { type: "string" },
           filters,
@@ -61,8 +77,23 @@ export const VIEWSPEC_JSON_SCHEMA = {
           // table
           columns: { type: "array", items: { type: "string" } },
           // callout
-          tone: { type: "string", enum: ["info", "warn", "danger"] },
+          tone: {
+            type: "string",
+            enum: ["info", "warn", "danger", "good", "warn", "neutral"],
+          },
           message: { type: "string" },
+          // verdict
+          headline: { type: "string" },
+          detail: { type: "string" },
+          // buckets
+          edges: { type: "array", items: { type: "integer" } },
+          // calendar
+          scale: { type: "string", enum: ["month", "week"] },
+          // comparison
+          leftLabel: { type: "string" },
+          rightLabel: { type: "string" },
+          leftFilters: filters,
+          rightFilters: filters,
         },
         required: ["id", "type"],
       },

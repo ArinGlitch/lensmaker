@@ -51,6 +51,33 @@ function referencedFields(block: Block): string[] {
       );
     case "callout":
       return [];
+    case "verdict":
+      return [block.primary, block.secondary, block.sortBy].filter(
+        (x): x is string => typeof x === "string",
+      );
+    case "calendar":
+      return [block.dateField, block.primary];
+    case "buckets":
+      return [block.dateField];
+    case "comparison":
+      return [
+        block.field,
+        ...block.leftFilters.map((f) => f.field),
+        ...block.rightFilters.map((f) => f.field),
+      ];
+    case "countdown":
+      return [block.dateField, block.primary].filter(
+        (x): x is string => typeof x === "string",
+      );
+    case "digest":
+      return [block.groupBy, block.dateField, block.primary].filter(
+        (x): x is string => typeof x === "string",
+      );
+    case "entity":
+    case "smallMultiples":
+      return [block.groupBy, block.field].filter(
+        (x): x is string => typeof x === "string",
+      );
   }
 }
 

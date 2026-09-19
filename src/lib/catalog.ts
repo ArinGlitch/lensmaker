@@ -105,4 +105,62 @@ export const CATALOG: CatalogEntry[] = [
     use: "ONE urgent message. Use for warnings/risks.",
     props: "tone(info|warn|danger), message",
   },
+  {
+    type: "verdict",
+    use:
+      "THE ANSWER AS A WORD, not a number. Use FIRST for any 'am I ok / what needs me / " +
+      "what is blocked / anything urgent' intent. Prefer this over stat when the user wants " +
+      "reassurance or an alarm rather than a figure.",
+    props:
+      "headline(short phrase e.g. '3 things need you'), tone(good|warn|danger|neutral), " +
+      "detail?, primary?, secondary?, sortBy?, dir?, limit?(1-10)",
+  },
+  {
+    type: "calendar",
+    use: "Month or week GRID. Use when the user thinks in dates rather than a ranked order.",
+    props: "dateField, primary, scale?(month|week)",
+  },
+  {
+    type: "buckets",
+    use:
+      "How long things have been waiting, as age bands. Use for 'what have I been " +
+      "ignoring / sitting on / not responded to'.",
+    props: "dateField, edges?(day boundaries asc, default 2/7/14/30), label?",
+  },
+  {
+    type: "comparison",
+    use:
+      "TWO numbers side by side with the delta. Use for old vs new price, this month vs " +
+      "last, budget vs actual. Each side is a filtered slice of the same rows.",
+    props:
+      "label, field, agg, format?, leftLabel, leftFilters[], rightLabel, rightFilters[]",
+  },
+  {
+    type: "countdown",
+    use:
+      "Live time remaining until the soonest matching date. Use when a single deadline " +
+      "is the whole answer and precision matters.",
+    props: "dateField, label?, primary?",
+  },
+  {
+    type: "digest",
+    use:
+      "Grouped counts split into still-actionable vs already-expired. Use for " +
+      "'what did I miss' / 'catch me up'.",
+    props: "groupBy, dateField?, primary?",
+  },
+  {
+    type: "entity",
+    use:
+      "One row per group (usually vendor) rolled up across everything. Use for " +
+      "'who am I paying' / 'per-vendor totals'.",
+    props: "groupBy, field?, agg?, format?, limit?(1-12)",
+  },
+  {
+    type: "smallMultiples",
+    use:
+      "Grid of identical mini-cards, one per group, so outliers stand out. Use for " +
+      "'compare across categories/people at a glance'.",
+    props: "groupBy, field?, agg?, format?, limit?(1-12)",
+  },
 ];
