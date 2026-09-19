@@ -13,6 +13,7 @@ throwaway harness and screenshotting them in headless Chrome, not by reading cod
 | 5 | Intent chip appends to existing text instead of replacing | demo-breaking | **Fixed** |
 | 6 | `npm run db:seed` cannot see `DATABASE_URL` | blocks first run | **Open** — Dev A's file |
 | 7 | Gemini provider dies on a missing peer dependency | blocks the demo provider | **Fixed** |
+| 8 | One malformed block sinks the whole spec → every intent falls back | **demo-breaking** | **Open** — Dev A's files |
 
 ---
 
@@ -193,3 +194,74 @@ to see through it:
 ```bash
 npx tsx --env-file=.env scripts/check-gemini.ts
 ```
+
+
+---
+
+## 8. One malformed block sinks the whole spec, so every intent falls back
+
+**Where:** `src/lib/llm/schema.ts` and `src/app/api/view/route.ts` — **Dev A's
+files. Reported, not fixed.**
+
+**Severity: demo-breaking, and currently active.** All four scripted intents
+return the identical fallback layout. The core claim of the project — different
+questions produce structurally different screens — does not happen at all right
+now.
+
+**This is not a provider problem.** Gemini is connected and answering in
+1.7–2.8s with no provider error. The specs are being rejected after they arrive.
+
+**Reproduction:**
+
+```bash
+curl -s -b cookies.txt -X POST localhost:3000/api/view \
+  -H 'Content-Type: application/json' \
+  -d '{"intent":"what are my hard deadlines right now?"}'
+```
+
+`source` comes back `"fallback"`. The `raw` field in the same response (dev only)
+shows what Gemini actually sent:
+
+```json
+{
+  "title": "Upcoming Deadlines",
+  "blocks": [
+    { "id": "deadline_timeline", "type": "timeline",
+      "dateField": "deadlineDate", "primary": "subject",
+      "secondary": "vendor", "sortBy": "deadlineDate", "tone": "info" },
+    { "id": "deadline_count", "type": "stat",
+      "label": "Total Deadlines", "title": "Active Deadlines", "tone": "info" }
+  ],
+  "confidence": "high", "insufficient_evidence": false
+}
+```
+
+The timeline block is **correct and renderable**. The stat block is missing
+`agg` and `field`, both required by `StatBlockSchema`. `ViewSpecSchema.safeParse()`
+fails on the whole object, so the good timeline block is thrown away with the bad
+stat block and the user gets the fallback.
+
+**Cause:** `VIEWSPEC_JSON_SCHEMA` is a flattened union — every block property is
+optional and only `id` and `type` are `required`. Gemini is emitting exactly what
+that schema permits; the schema simply permits shapes that Zod then rejects. The
+two schemas disagree, and the strict one runs last.
+
+(Secondary, harmless: `sortBy` on a timeline and `tone` on a stat/timeline are
+not in those block types. Zod strips unknown keys, so these do no damage — but
+they are more evidence the model is being told the wrong shape.)
+
+**Suggested fix 1 — prune per block, not per spec.** This is the one that
+matters. Validate each block against `BlockSchema` individually, drop the
+failures, keep the survivors, and fall back only when none survive. `plan.md` §4
+rule 2 already prescribes exactly this for unknown field names; it just is not
+applied to shape errors. With it, the spec above renders its timeline and
+silently drops the broken stat — a real screen instead of a fallback.
+
+**Suggested fix 2 — tighten the prompt.** State required props per block type,
+e.g. `stat REQUIRES agg and field`. Raises the hit rate; does not make the
+pipeline safe on its own, so do it *as well as* fix 1, not instead.
+
+**Why this stayed invisible:** the never-fail guarantee. `/api/view` returning a
+valid 200 with `source:"fallback"` is indistinguishable from success unless you
+read `source` or the server log. Same root cause as #7. It may be worth logging
+the Zod error and the offending block id when a spec is rejected.
