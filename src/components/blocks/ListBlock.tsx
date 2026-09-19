@@ -26,7 +26,7 @@ export default function ListBlockView({
     filters: block.filters,
     sortBy: block.sortBy,
     dir: block.dir ?? "desc",
-    limit: expanded ? undefined : block.limit ?? 10,
+    limit: expanded ? undefined : block.limit,
   });
 
   return (

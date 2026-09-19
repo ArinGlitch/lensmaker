@@ -35,7 +35,7 @@ export default function TableBlockView({
     filters: block.filters,
     sortBy: block.sortBy,
     dir: block.dir ?? "desc",
-    limit: expanded ? undefined : block.limit ?? 15,
+    limit: expanded ? undefined : block.limit,
   });
 
   return (

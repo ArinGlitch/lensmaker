@@ -15,9 +15,10 @@ export default function FixedDashboard({ items }: { items: Item[] }) {
   const selectItem = useSelectItem();
   const [expanded, setExpanded] = useState(false);
   const total = items.reduce((sum, i) => sum + (i.amount ?? 0), 0);
-  // Capped for the ablation contrast, but the cap must be VISIBLE — a silently
-  // truncated table reads as missing data rather than as a design choice.
-  const rows = expanded ? items : items.slice(0, 15);
+  // No cap. This is a hackathon demo with 85 rows: hiding data is worse than a
+  // long page. The ablation contrast comes from the layout being frozen, not
+  // from showing fewer rows.
+  const rows = items;
 
   return (
     <section className="flex flex-col gap-4">

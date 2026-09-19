@@ -30,7 +30,7 @@ export default function CardsBlockView({
     filters: block.filters,
     sortBy: block.sortBy,
     dir: block.dir,
-    limit: expanded ? undefined : block.limit ?? 9,
+    limit: expanded ? undefined : block.limit,
   });
 
   return (

@@ -165,7 +165,10 @@ export default function Home() {
                 </button>
               </div>
               {view?.source === "fallback" ? (
-                <FallbackNotice provider={view.provider} />
+                <FallbackNotice
+                  provider={view.provider}
+                  failureKind={view.failureKind}
+                />
               ) : null}
 
               <ItemSelectionProvider value={setSelected}>

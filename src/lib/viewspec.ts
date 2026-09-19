@@ -137,12 +137,12 @@ export const BlockSchema = z.discriminatedUnion("type", [
 /* -------------------------------- viewspec -------------------------------- */
 
 export const ViewSpecSchema = z.object({
-  title: z.string().min(1).max(120),
-  intent_echo: z.string().min(1).max(200),
-  blocks: z.array(BlockSchema).min(1).max(5),
+  title: z.string().min(1).max(200),
+  intent_echo: z.string().min(1).max(400),
+  blocks: z.array(BlockSchema).min(1).max(8),
   confidence: z.enum(["low", "medium", "high"]),
   insufficient_evidence: z.boolean(),
-  notes: z.string().max(400).optional(),
+  notes: z.string().max(800).optional(),
 });
 
 /**
@@ -155,12 +155,27 @@ export const ViewSpecSchema = z.object({
  * `BlockSchema`, and drop only the failures.
  */
 export const ViewSpecEnvelopeSchema = z.object({
-  title: z.string().min(1).max(120),
-  intent_echo: z.string().min(1).max(200),
+  /**
+   * These three are TRUNCATED, never rejected. They are cosmetic prose, and a
+   * length cap on them used to fail the whole spec — discarding four perfectly
+   * good blocks because the model explained itself at length. Same class of bug
+   * as the riskReason cap in llm/extract.ts.
+   */
+  title: z
+    .string()
+    .min(1)
+    .transform((v) => v.slice(0, 120)),
+  intent_echo: z
+    .string()
+    .min(1)
+    .transform((v) => v.slice(0, 200)),
+  notes: z
+    .string()
+    .transform((v) => v.slice(0, 400))
+    .optional(),
   blocks: z.array(z.unknown()).min(1).max(8),
   confidence: z.enum(["low", "medium", "high"]),
   insufficient_evidence: z.boolean(),
-  notes: z.string().max(400).optional(),
 });
 
 /* ---------------------------------- types --------------------------------- */
@@ -219,5 +234,13 @@ export interface ViewResponse {
   source: ViewSource;
   provider: string;
   latencyMs: number;
+  /**
+   * Why a fallback happened: "provider" means the call itself failed (expired
+   * token, bad key, quota), "invalid" means the model answered but the spec
+   * failed validation. The UI must not conflate them — saying "the model was
+   * not reached" when it answered is a lie that sends you debugging the wrong
+   * thing.
+   */
+  failureKind?: "provider" | "invalid";
   raw?: string;
 }

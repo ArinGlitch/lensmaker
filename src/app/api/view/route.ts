@@ -111,7 +111,10 @@ function validateAndPrune(raw: unknown): {
     }
 
     seenTypes.add(b.type);
-    kept.push(b);
+    // Hackathon demo: show everything. The model routinely caps a block at 10
+    // or 12 rows, which silently hides most of an 85-row corpus. Drop its limit
+    // and let the block render the full filtered set.
+    kept.push("limit" in b ? ({ ...b, limit: undefined } as Block) : b);
   }
 
   if (kept.length === 0) return { spec: null, droppedBlocks: dropped };
@@ -208,6 +211,7 @@ export async function POST(req: Request) {
   let source: ViewSource = "model";
   let latencyMs = 0;
   let raw = "";
+  let failureKind: "provider" | "invalid" | null = null;
 
   try {
     const result = await provider.generateViewSpec({
@@ -219,6 +223,7 @@ export async function POST(req: Request) {
     raw = result.raw;
 
     const { spec: validated, droppedBlocks } = validateAndPrune(result.spec);
+    if (!validated) failureKind = "invalid";
     if (validated) {
       spec = excludeSuspiciousFromMoney(validated, intent);
       if (droppedBlocks > 0) {
@@ -228,6 +233,7 @@ export async function POST(req: Request) {
       }
     }
   } catch (err) {
+    failureKind = "provider";
     console.error("[view] provider error", err);
   }
 
@@ -254,6 +260,7 @@ export async function POST(req: Request) {
     source,
     provider: provider.name,
     latencyMs,
+    ...(failureKind ? { failureKind } : {}),
     ...(process.env.NODE_ENV !== "production" && raw ? { raw } : {}),
   });
 }

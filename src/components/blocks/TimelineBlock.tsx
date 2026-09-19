@@ -39,7 +39,7 @@ export default function TimelineBlockView({
     filters: block.filters,
     sortBy: block.dateField,
     dir: block.dir ?? "asc",
-    limit: expanded ? undefined : block.limit ?? 12,
+    limit: expanded ? undefined : block.limit,
   });
 
   return (

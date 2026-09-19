@@ -10,7 +10,6 @@ export async function GET() {
   const views = await prisma.savedView.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
-    take: 50,
   });
 
   return Response.json({
