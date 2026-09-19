@@ -3,7 +3,7 @@
 import type { Item } from "@/lib/viewspec";
 import { formatMoney, formatCell } from "@/components/blockData";
 import { useSelectItem } from "@/components/ItemSelection";
-import { MICRO, statusFor } from "@/components/theme";
+import { MICRO } from "@/components/theme";
 import MailRow from "@/components/MailRow";
 
 /**
@@ -74,8 +74,6 @@ export default function FixedDashboard({ items }: { items: Item[] }) {
                       : formatMoney(item.amount, item.currency)
                   }
                   trailingBottom={formatCell(item, "receivedAt")}
-                  status={statusFor(item.urgency)}
-                  statusLabel={item.urgency}
                   onClick={() => selectItem(item)}
                 />
               </li>
