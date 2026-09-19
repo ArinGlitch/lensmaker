@@ -5,14 +5,11 @@
  *
  *   LLM_PROVIDER=gemini npx tsx scripts/warm-cache.ts
  */
+import { DEMO_INTENTS } from "../src/lib/intents";
+
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 
-const INTENTS = [
-  "what's about to charge me?",
-  "what are my hard deadlines?",
-  "what am I spending most on?",
-  "what's trying to scam me?",
-];
+const INTENTS = DEMO_INTENTS;
 
 async function main() {
   const login = await fetch(`${BASE}/api/auth/login`, {

@@ -5,7 +5,14 @@ import { getSession } from "@/lib/auth";
 import { getProvider } from "@/lib/llm";
 import { buildFallbackSpec } from "@/lib/fallback";
 import { ALLOWED_FIELDS, CATALOG, SCHEMA_DIGEST, SCHEMA_VERSION } from "@/lib/catalog";
-import { ViewSpecSchema, type Block, type ViewSpec, type ViewSource } from "@/lib/viewspec";
+import {
+  BlockSchema,
+  ViewSpecEnvelopeSchema,
+  ViewSpecSchema,
+  type Block,
+  type ViewSpec,
+  type ViewSource,
+} from "@/lib/viewspec";
 
 const BodySchema = z.object({
   intent: z.string().min(1).max(300),
@@ -42,25 +49,60 @@ function referencedFields(block: Block): string[] {
 }
 
 /**
- * Drops blocks naming fields outside the allowlist. `id` is permitted because
- * count-style stats legitimately aggregate over it.
+ * Validates the envelope and each block SEPARATELY.
+ *
+ * Parsing the whole ViewSpec at once meant a single malformed block (e.g. a
+ * stat missing `agg`) failed the entire object, threw away the good blocks
+ * alongside it, and served the fallback — so every intent produced the same
+ * screen. plan.md §4 rule 2 always prescribed per-block pruning for unknown
+ * field names; this applies it to shape errors too.
+ *
+ * Returns null only when nothing survives, which is the one case that should
+ * reach the fallback.
  */
-function pruneBlocks(spec: ViewSpec): ViewSpec {
+function validateAndPrune(raw: unknown): {
+  spec: ViewSpec | null;
+  droppedBlocks: number;
+} {
+  const envelope = ViewSpecEnvelopeSchema.safeParse(raw);
+  if (!envelope.success) return { spec: null, droppedBlocks: 0 };
+
   const seenTypes = new Set<string>();
-  const kept = spec.blocks.filter((b) => {
+  const kept: Block[] = [];
+  let dropped = 0;
+
+  for (const candidate of envelope.data.blocks) {
+    const block = BlockSchema.safeParse(candidate);
+    if (!block.success) {
+      dropped += 1;
+      continue;
+    }
+    const b = block.data;
+
     const fields = [
       ...referencedFields(b),
       ...(b.filters?.map((f) => f.field) ?? []),
     ];
-    if (!fields.every((f) => ALLOWED_FIELDS.has(f) || f === "id")) return false;
+    if (!fields.every((f) => ALLOWED_FIELDS.has(f) || f === "id")) {
+      dropped += 1;
+      continue;
+    }
 
     // Visual variety is the demo. Two blocks of one type reads as lazy output,
     // so keep only the first of each type even if the model repeats itself.
-    if (seenTypes.has(b.type)) return false;
+    if (seenTypes.has(b.type)) {
+      dropped += 1;
+      continue;
+    }
     seenTypes.add(b.type);
-    return true;
-  });
-  return { ...spec, blocks: kept };
+    kept.push(b);
+  }
+
+  if (kept.length === 0) return { spec: null, droppedBlocks: dropped };
+  return {
+    spec: { ...envelope.data, blocks: kept },
+    droppedBlocks: dropped,
+  };
 }
 
 export async function POST(req: Request) {
@@ -113,11 +155,13 @@ export async function POST(req: Request) {
     latencyMs = result.latencyMs;
     raw = result.raw;
 
-    const validated = ViewSpecSchema.safeParse(result.spec);
-    if (validated.success) {
-      const pruned = pruneBlocks(validated.data);
-      if (pruned.blocks.length > 0) {
-        spec = pruned;
+    const { spec: validated, droppedBlocks } = validateAndPrune(result.spec);
+    if (validated) {
+      spec = validated;
+      if (droppedBlocks > 0) {
+        console.warn(
+          `[view] dropped ${droppedBlocks} malformed block(s); kept ${validated.blocks.length}`,
+        );
       }
     }
   } catch (err) {

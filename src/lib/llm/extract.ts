@@ -11,37 +11,57 @@
  */
 import { z } from "zod";
 
+/**
+ * Bedrock's tool path is loose about nullable numbers: it omits the key, or
+ * sends the STRING "null" / "" / "N/A", or a numeric string. Strict
+ * z.number().nullish() rejected the whole row for these, discarding otherwise
+ * perfect extractions. Coerce first, validate second.
+ */
+const toNullableNumber = (v: unknown): number | null => {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (typeof v === "string") {
+    const t = v.trim().toLowerCase();
+    if (t === "" || t === "null" || t === "n/a" || t === "none") return null;
+    const n = Number(t.replace(/[$,]/g, ""));
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+};
+
+const NullableNumber = z.unknown().transform(toNullableNumber);
+const NullableInt = z
+  .unknown()
+  .transform(toNullableNumber)
+  .transform((v) => (v === null ? null : Math.trunc(v)))
+  .refine((v) => v === null || (v >= -400 && v <= 4000), {
+    message: "day offset out of range",
+  });
+
 export const ExtractionSchema = z.object({
   category: z.enum(["subscription", "deadline", "receipt", "security", "general"]),
-  summary: z.string().min(1).max(240),
+  summary: z.string().min(1).max(400),
   urgency: z.enum(["low", "medium", "high"]),
   /**
    * These are `.nullish()` with a default rather than `.nullable()` because
    * Bedrock's tool-call path OMITS a key entirely instead of sending null —
    * so a strictly-nullable field fails on 22 of 29 real emails.
    */
-  amount: z.number().nullish().transform((v) => v ?? null),
-  currency: z.string().max(8).nullish().transform((v) => v ?? null),
+  amount: NullableNumber,
+  currency: z.string().max(16).nullish().transform((v) => v ?? null),
   /** Days from the email's received date until money moves. */
-  chargeInDays: z
-    .number()
-    .int()
-    .min(0)
-    .max(400)
-    .nullish()
-    .transform((v) => v ?? null),
+  chargeInDays: NullableInt,
   /** Days from the email's received date until a hard deadline. */
-  deadlineInDays: z
-    .number()
-    .int()
-    .min(0)
-    .max(400)
-    .nullish()
-    .transform((v) => v ?? null),
+  deadlineInDays: NullableInt,
   isSuspicious: z.boolean(),
-  riskReason: z.string().max(300).nullish().transform((v) => v ?? null),
+  /**
+   * Generous cap. At 300 chars this rejected 3 of 4 phishing emails: the model
+   * detected them correctly and wrote a detailed, specific reason, and the
+   * schema threw the whole row away for being too well explained.
+   */
+  riskReason: z.string().max(1200).nullish().transform((v) => v ?? null),
   /** Verbatim sentence the fields were taken from — must appear in the body. */
-  sourceExcerpt: z.string().min(1).max(300),
+  sourceExcerpt: z.string().min(1).max(600),
 });
 
 export type Extraction = z.infer<typeof ExtractionSchema>;

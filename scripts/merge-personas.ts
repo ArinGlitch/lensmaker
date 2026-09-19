@@ -56,9 +56,11 @@ function main() {
         dropped += 1;
         continue;
       }
-      // Same sender + same subject is a duplicate; a repeat reminder differs
-      // by subject ("Re: ...") so legitimate second-reminders survive.
-      const key = `${r.vendor}|${r.subject}`.toLowerCase();
+      // Include receivedAt in the key. Sender+subject alone dropped the
+      // intentional duplicate-charge pair (two identical receipts days apart),
+      // which is exactly the data the "is anything double-charging me?" intent
+      // needs. Only a byte-identical resend is a real duplicate here.
+      const key = `${r.vendor}|${r.subject}|${r.receivedAt}`.toLowerCase();
       if (seen.has(key)) {
         dropped += 1;
         continue;

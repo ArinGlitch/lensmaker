@@ -11,12 +11,14 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "tsx --env-file=.env prisma/seed.ts",
     "db:studio": "prisma studio",
-    "demo:warm": "tsx scripts/warm-cache.ts"
+    "demo:warm": "tsx --env-file=.env scripts/warm-cache.ts",
+    "gemini:check": "tsx --env-file=.env scripts/check-gemini.ts",
+    "personas:merge": "tsx scripts/merge-personas.ts"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx --env-file=.env prisma/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "3.994.0",
