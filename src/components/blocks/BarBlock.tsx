@@ -1,3 +1,121 @@
-// blocks/BarBlock.tsx — PLACEHOLDER, owned by Dev B. Replace the body; keep path, default export, and props.
+"use client";
+
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import type { BarBlock, Item } from "@/lib/viewspec";
-export default function BarBlockView(_: { block: BarBlock; items: Item[] }) { return null; }
+import { groupAndAggregate } from "@/lib/aggregate";
+import { applyFilters, fieldLabel, formatValue } from "@/components/blockData";
+import { VIZ } from "@/components/theme";
+
+/**
+ * Horizontal bars, ranked. Horizontal because category labels read straight
+ * across at 6+ categories instead of being rotated or truncated.
+ *
+ * One series, so there is no legend — the title names what is being measured.
+ */
+export default function BarBlockView({
+  block,
+  items,
+}: {
+  block: BarBlock;
+  items: Item[];
+}) {
+  const rows = applyFilters(items, block.filters);
+  const points = groupAndAggregate(
+    rows,
+    block.groupBy,
+    block.agg,
+    block.field,
+    block.limit ?? 8,
+  );
+
+  const heading =
+    block.title ??
+    `${fieldLabel(block.groupBy)} by ${block.agg}${
+      block.field ? ` of ${fieldLabel(block.field)}` : ""
+    }`;
+
+  const chartHeight = Math.max(160, points.length * 40 + 36);
+  const fmt = (value: unknown) =>
+    formatValue(typeof value === "number" ? value : null, block.format);
+
+  return (
+    <section className="rounded-xl border border-white/10 bg-[#1a1a19] p-5">
+      <h3 className="text-sm font-medium text-neutral-300">{heading}</h3>
+      <p className="mt-0.5 text-xs text-neutral-500">
+        {block.agg}
+        {block.field ? ` of ${block.field}` : ""} across {points.length}{" "}
+        {points.length === 1 ? "group" : "groups"}
+      </p>
+
+      {points.length === 0 ? (
+        <p className="mt-6 rounded-lg border border-dashed border-white/10 px-5 py-8 text-center text-sm text-neutral-500">
+          Nothing to chart for this block.
+        </p>
+      ) : (
+        <div className="mt-4" style={{ height: chartHeight }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={points}
+              layout="vertical"
+              margin={{ top: 4, right: 16, bottom: 4, left: 0 }}
+              barCategoryGap="28%"
+            >
+              <CartesianGrid
+                horizontal={false}
+                stroke={VIZ.grid}
+                strokeWidth={1}
+              />
+              <XAxis
+                type="number"
+                tickFormatter={fmt}
+                tick={{ fill: VIZ.muted, fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                type="category"
+                dataKey="key"
+                width={118}
+                tick={{ fill: VIZ.inkSecondary, fontSize: 12 }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(value: unknown) => {
+                  const s = String(value);
+                  return s.length > 14 ? `${s.slice(0, 13)}…` : s;
+                }}
+              />
+              <Tooltip
+                cursor={{ fill: "rgba(255,255,255,0.05)" }}
+                formatter={fmt}
+                contentStyle={{
+                  background: "#0d0d0d",
+                  border: `1px solid ${VIZ.axis}`,
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+                labelStyle={{ color: VIZ.ink, fontWeight: 600 }}
+                itemStyle={{ color: VIZ.inkSecondary }}
+              />
+              <Bar
+                dataKey="value"
+                name={block.field ?? block.agg}
+                fill={VIZ.series1}
+                barSize={18}
+                radius={[0, 4, 4, 0]}
+                isAnimationActive={false}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </section>
+  );
+}

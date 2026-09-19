@@ -1,26 +1,26 @@
 @import "tailwindcss";
 
+/*
+ * The app is dark by commitment, not by preference: layout.tsx sets the page
+ * plane and every block is colour-stepped for a dark surface.
+ *
+ * The stock scaffold flipped these on prefers-color-scheme, and because this
+ * `body` rule is unlayered it beats Tailwind's `bg-neutral-950` utility — so on
+ * a light-mode machine the plane went white and the header text with it. Fixed
+ * values instead, and no font-family override so Tailwind's system sans wins.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
