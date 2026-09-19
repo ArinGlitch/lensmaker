@@ -16,10 +16,6 @@ export default function FixedDashboard({ items }: { items: Item[] }) {
 
   return (
     <section className="flex flex-col gap-4">
-      <p className="text-xs uppercase tracking-wider text-neutral-500">
-        Fixed dashboard · same layout for every question
-      </p>
-
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="border border-neutral-700 bg-neutral-900 p-4">
           <p className="text-xs text-neutral-400">Total items</p>
