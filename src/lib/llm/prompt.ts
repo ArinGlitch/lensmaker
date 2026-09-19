@@ -24,7 +24,9 @@ ${blocks}
 
 RULES
 - 1 to 5 blocks. Pick the FEWEST that answer the intent well.
-- Choose block types that genuinely differ in shape. Do not emit three similar blocks.
+- NEVER emit the same block type twice. Each block must be a DIFFERENT type.
+- Prefer a mix of shapes: one number, one chart, one item view. Visual variety matters.
+- To express "this field is set", use {field, op:"ne", value:null}.
 - Lead with a "stat" only when a single headline number is the point.
 - Use "timeline" for date/deadline intents, "bar" for comparisons, "cards" when individual items matter.
 - Use "callout" for risk/warning intents.

@@ -22,10 +22,16 @@ export const FilterOpSchema = z.enum([
 export const FilterSchema = z.object({
   field: z.string().min(1).max(40),
   op: FilterOpSchema,
+  /**
+   * `null` is permitted and meaningful: {op:"ne", value:null} is how the model
+   * expresses "this field is set", which it reaches for constantly on nullable
+   * fields like deadlineDate. Rejecting null sent valid specs to the fallback.
+   */
   value: z.union([
     z.string().max(200),
     z.number(),
     z.boolean(),
+    z.null(),
     z.array(z.union([z.string().max(200), z.number()])).max(20),
   ]),
 });

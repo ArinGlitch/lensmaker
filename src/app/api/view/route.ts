@@ -46,12 +46,19 @@ function referencedFields(block: Block): string[] {
  * count-style stats legitimately aggregate over it.
  */
 function pruneBlocks(spec: ViewSpec): ViewSpec {
+  const seenTypes = new Set<string>();
   const kept = spec.blocks.filter((b) => {
     const fields = [
       ...referencedFields(b),
       ...(b.filters?.map((f) => f.field) ?? []),
     ];
-    return fields.every((f) => ALLOWED_FIELDS.has(f) || f === "id");
+    if (!fields.every((f) => ALLOWED_FIELDS.has(f) || f === "id")) return false;
+
+    // Visual variety is the demo. Two blocks of one type reads as lazy output,
+    // so keep only the first of each type even if the model repeats itself.
+    if (seenTypes.has(b.type)) return false;
+    seenTypes.add(b.type);
+    return true;
   });
   return { ...spec, blocks: kept };
 }
