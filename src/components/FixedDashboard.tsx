@@ -5,8 +5,9 @@ import type { Item } from "@/lib/viewspec";
 import { formatMoney, formatCell } from "@/components/blockData";
 import { useSelectItem } from "@/components/ItemSelection";
 import Pagination, { clampPage, pageSlice } from "@/components/Pagination";
+import SpendingBreakdown from "@/components/SpendingBreakdown";
 
-const PER_PAGE = 10;
+const PER_PAGE = 15;
 
 /**
  * The ablation. This layout is frozen: the same totals and the same table,
@@ -27,6 +28,7 @@ function moneyDate(item: Item): Date | null {
 export default function FixedDashboard({ items }: { items: Item[] }) {
   const selectItem = useSelectItem();
   const [page, setPage] = useState(0);
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
 
   const now = new Date();
   let monthTotal = 0;
@@ -42,26 +44,36 @@ export default function FixedDashboard({ items }: { items: Item[] }) {
   const current = clampPage(page, items.length, PER_PAGE);
   const rows = pageSlice(items, current, PER_PAGE);
 
-  const tiles = [
-    { label: "Total items", value: String(items.length) },
-    { label: "This month", value: formatMoney(monthTotal) },
-    { label: "This year", value: formatMoney(yearTotal) },
-  ];
-
   return (
     <section className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {tiles.map((t) => (
-          <div
-            key={t.label}
-            className="border border-neutral-700 bg-neutral-900 p-4"
-          >
-            <p className="text-xs text-neutral-400">{t.label}</p>
-            <p className="mt-1 text-2xl font-semibold text-neutral-100">
-              {t.value}
-            </p>
-          </div>
-        ))}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="border border-neutral-700 bg-neutral-900 p-4">
+          <p className="text-xs text-neutral-400">Total items</p>
+          <p className="mt-1 text-2xl font-semibold text-neutral-100">
+            {items.length}
+          </p>
+        </div>
+
+        {/* One spending tile: the month is the headline, the year is context,
+            and the whole tile opens the month-by-month history. */}
+        <button
+          type="button"
+          onClick={() => setBreakdownOpen(true)}
+          className="group border border-neutral-700 bg-neutral-900 p-4 text-left transition-colors hover:border-neutral-500"
+        >
+          <span className="flex items-baseline justify-between gap-3">
+            <span className="text-xs text-neutral-400">Spending</span>
+            <span className="text-[11px] text-neutral-500 group-hover:text-neutral-300">
+              Breakdown →
+            </span>
+          </span>
+          <span className="mt-1 block text-2xl font-semibold text-neutral-100">
+            {formatMoney(monthTotal)}
+          </span>
+          <span className="mt-1 block text-xs text-neutral-400">
+            this month · {formatMoney(yearTotal)} this year
+          </span>
+        </button>
       </div>
 
       <div className="border border-neutral-700 bg-neutral-900">
@@ -130,6 +142,12 @@ export default function FixedDashboard({ items }: { items: Item[] }) {
           plain
         />
       </div>
+
+      <SpendingBreakdown
+        items={items}
+        open={breakdownOpen}
+        onClose={() => setBreakdownOpen(false)}
+      />
     </section>
   );
 }
